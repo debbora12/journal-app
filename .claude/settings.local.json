@@ -5,7 +5,10 @@
       "Bash(node --input-type=module --eval ' *)",
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:5173/)",
-      "mcp__Claude_in_Chrome__tabs_context_mcp"
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix: journal usable without login, auth as modal, signup fix *)",
+      "Bash(git push *)"
     ]
   }
 }

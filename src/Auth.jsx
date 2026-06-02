@@ -3,27 +3,62 @@ import { supabase } from './supabase.js'
 
 const UI_FONT = "'Barlow Condensed', sans-serif"
 
-export default function Auth() {
-  const [mode, setMode]       = useState('login')   // 'login' | 'signup'
-  const [email, setEmail]     = useState('')
+/**
+ * Modal de autenticação.
+ * Props:
+ *  onClose   – chamado para fechar (se omitido, não mostra o "continuar sem login")
+ *  message   – texto de contexto exibido no topo (ex: "Login necessário para baixar")
+ */
+export default function Auth({ onClose, message }) {
+  const [mode, setMode]         = useState('login')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [message, setMessage] = useState(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
+  const [info, setInfo]         = useState(null)   // mensagem informativa (ex: confirmação de email)
+
+  const reset = (nextMode) => {
+    setMode(nextMode)
+    setError(null)
+    setInfo(null)
+    setEmail('')
+    setPassword('')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setMessage(null)
+    setInfo(null)
 
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
+      if (error) {
+        setError(
+          error.message === 'Invalid login credentials'
+            ? 'E-mail ou senha incorretos.'
+            : error.message
+        )
+      }
+      // Se ok, onAuthStateChange atualiza `user` → App fecha o modal
     } else {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) setError(error.message)
-      else setMessage('Verifique seu e-mail para confirmar o cadastro.')
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      })
+
+      if (error) {
+        setError(
+          error.message.includes('already registered')
+            ? 'Este e-mail já está cadastrado. Tente fazer login.'
+            : error.message
+        )
+      } else if (data.user && !data.session) {
+        // Email de confirmação foi enviado
+        setInfo('Cadastro realizado! Verifique seu e-mail e clique no link de confirmação para ativar sua conta.')
+      }
+      // Se confirmação desabilitada no Supabase, data.session existe → App fecha o modal
     }
     setLoading(false)
   }
@@ -33,123 +68,142 @@ export default function Auth() {
     background: '#FFFFFF', border: '1px solid #C8C2B8',
     borderRadius: 5, outline: 'none',
     fontFamily: UI_FONT, fontSize: 15, color: '#1A1A1A',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
+    boxSizing: 'border-box', transition: 'border-color 0.15s',
   }
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&display=swap');
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; }
-        button { border: none; outline: none; cursor: pointer; }
-        input:focus { border-color: #888888 !important; }
-      `}</style>
-
-      <div style={{
-        width: '100vw', height: '100vh',
+    /* Overlay */
+    <div
+      onClick={onClose ?? undefined}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'rgba(45, 90, 61, 0.82)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#2D5A3D',
-        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
-          "<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'>" +
-          "<path d='M10 0 L10 50 M20 0 L20 50 M30 0 L30 50 M40 0 L40 50 M0 10 L50 10 M0 20 L50 20 M0 30 L50 30 M0 40 L50 40' stroke='#3D7A52' stroke-width='0.4' opacity='0.55'/>" +
-          "<rect x='0' y='0' width='50' height='50' fill='none' stroke='#4A9060' stroke-width='0.9' opacity='0.65'/>" +
-          "</svg>"
-        )}")`,
-        backgroundSize: '50px 50px',
+        backdropFilter: 'blur(3px)',
         fontFamily: UI_FONT,
-      }}>
-        {/* Card */}
-        <div style={{
+      }}
+    >
+      {/* Card — stopPropagation para não fechar ao clicar dentro */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
           width: 360,
           backgroundColor: '#EDE8DF',
           backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)',
           backgroundSize: '4px 4px',
-          borderRadius: 8,
-          padding: '36px 32px 32px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-          display: 'flex', flexDirection: 'column', gap: 20,
-        }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 28, fontWeight: 600, letterSpacing: '0.06em', color: '#1A1A1A' }}>
-              jrnl
-            </div>
-            <div style={{ fontSize: 13, color: '#888888', marginTop: 4, letterSpacing: '0.04em' }}>
-              {mode === 'login' ? 'entrar na sua conta' : 'criar nova conta'}
-            </div>
+          borderRadius: 8, padding: '32px 28px 28px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', gap: 18,
+          animation: 'fadeDropdown 0.18s ease',
+        }}
+      >
+        {/* Logo + título */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: '0.06em', color: '#1A1A1A' }}>
+            jrnl
           </div>
+          <div style={{ fontSize: 13, color: '#888888', marginTop: 4 }}>
+            {mode === 'login' ? 'entrar na sua conta' : 'criar nova conta'}
+          </div>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Mensagem de contexto (ex: "login para baixar") */}
+        {message && !info && (
+          <div style={{
+            background: '#F0EBE3', border: '1px solid #D8D2C8', borderRadius: 5,
+            padding: '8px 12px', fontSize: 13, color: '#555555', textAlign: 'center',
+          }}>
+            {message}
+          </div>
+        )}
+
+        {/* Mensagem de sucesso/info */}
+        {info && (
+          <div style={{
+            background: '#EEFBF3', border: '1px solid #A8E6C1', borderRadius: 5,
+            padding: '10px 12px', fontSize: 13, color: '#27AE60', lineHeight: 1.5,
+          }}>
+            {info}
+          </div>
+        )}
+
+        {/* Formulário */}
+        {!info && (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <input
-              type="email"
-              placeholder="e-mail"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={inputStyle}
+              type="email" placeholder="e-mail" value={email} required
+              onChange={e => setEmail(e.target.value)} style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = '#888888'; }}
+              onBlur={e => { e.target.style.borderColor = '#C8C2B8'; }}
             />
             <input
-              type="password"
-              placeholder="senha"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={6}
-              style={inputStyle}
+              type="password" placeholder="senha (mín. 6 caracteres)" value={password} required minLength={6}
+              onChange={e => setPassword(e.target.value)} style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = '#888888'; }}
+              onBlur={e => { e.target.style.borderColor = '#C8C2B8'; }}
             />
 
             {error && (
-              <div style={{ fontSize: 13, color: '#C0392B', background: '#FEF0EE', border: '1px solid #F5C6C2', borderRadius: 4, padding: '8px 12px' }}>
+              <div style={{
+                background: '#FEF0EE', border: '1px solid #F5C6C2', borderRadius: 5,
+                padding: '8px 12px', fontSize: 13, color: '#C0392B',
+              }}>
                 {error}
-              </div>
-            )}
-            {message && (
-              <div style={{ fontSize: 13, color: '#27AE60', background: '#EEFBF3', border: '1px solid #A8E6C1', borderRadius: 4, padding: '8px 12px' }}>
-                {message}
               </div>
             )}
 
             <button
-              type="submit"
-              disabled={loading}
+              type="submit" disabled={loading}
               style={{
-                padding: '11px 0', marginTop: 4,
+                marginTop: 4, padding: '11px 0',
                 background: loading ? '#C8C2B8' : '#1A1A1A',
-                color: '#FFFFFF',
-                fontFamily: UI_FONT, fontSize: 15, fontWeight: 600,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                borderRadius: 5,
-                transition: 'background 0.15s',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                color: '#FFFFFF', fontFamily: UI_FONT, fontSize: 15, fontWeight: 600,
+                letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: 5,
+                transition: 'background 0.15s', cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
               {loading ? '...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>
+        )}
 
-          {/* Toggle mode */}
+        {/* Toggle modo */}
+        {!info && (
           <div style={{ textAlign: 'center', fontSize: 13, color: '#888888' }}>
             {mode === 'login' ? (
               <>Não tem conta?{' '}
-                <span onClick={() => { setMode('signup'); setError(null); setMessage(null); }}
+                <span onClick={() => reset('signup')}
                   style={{ color: '#1A1A1A', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
                   Criar conta
                 </span>
               </>
             ) : (
               <>Já tem conta?{' '}
-                <span onClick={() => { setMode('login'); setError(null); setMessage(null); }}
+                <span onClick={() => reset('login')}
                   style={{ color: '#1A1A1A', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
                   Entrar
                 </span>
               </>
             )}
           </div>
-        </div>
+        )}
+
+        {/* Continuar sem login */}
+        {onClose && (
+          <div
+            onClick={onClose}
+            style={{
+              textAlign: 'center', fontSize: 12, color: '#AAAAAA',
+              cursor: 'pointer', paddingTop: 2,
+              transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#555555'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#AAAAAA'; }}
+          >
+            continuar sem login
+          </div>
+        )}
       </div>
-    </>
+    </div>
   )
 }

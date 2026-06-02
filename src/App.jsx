@@ -1018,19 +1018,30 @@ export default function App() {
   })()).current;
 
   // ── Auth state ──────────────────────────────────────────────────────────────
-  const [user, setUser]               = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser]                   = useState(null);
+  const [authLoading, setAuthLoading]     = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMessage, setAuthMessage]     = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "SIGNED_IN") {
+        setShowAuthModal(false); // fecha modal ao logar
+        setPageData({});         // recarrega dados do Supabase
+      }
+      if (event === "SIGNED_OUT") {
+        setPageData({});         // recarrega do localStorage
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const openAuth = (msg = null) => { setAuthMessage(msg); setShowAuthModal(true); };
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -1396,13 +1407,12 @@ export default function App() {
   // ── Avatar inline ─────────────────────────────────────────────────────────
   const avatarInitial = userName ? userName[0].toUpperCase() : "?";
 
-  // ── Auth gate ────────────────────────────────────────────────────────────────
+  // Loading inicial mínimo (só enquanto verifica sessão)
   if (authLoading) return (
     <div style={{ width:"100vw", height:"100vh", background:"#2D5A3D", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontSize:18, color:"#4A9060", letterSpacing:"0.1em" }}>jrnl</div>
     </div>
   );
-  if (!user) return <Auth />;
 
   return (
     <>
@@ -1442,40 +1452,53 @@ export default function App() {
 
         {/* Center: save status */}
         <div style={{ fontSize: 13, fontWeight: 400, color: "#AAAAAA", letterSpacing: "0.02em" }}>
-          {lastSave ? `Salvo às ${lastSave}` : ""}
+          {user
+            ? (lastSave ? `Salvo às ${lastSave}` : "")
+            : <span style={{ cursor: "pointer" }} onClick={() => openAuth("Faça login para sincronizar seus dados.")}>
+                dados em cache —{" "}
+                <span style={{ textDecoration: "underline", color: "#888888" }}>fazer login</span>
+              </span>
+          }
         </div>
 
         {/* Right: download + avatar */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
+            onClick={() => !user && openAuth("Login necessário para fazer o download.")}
             style={{
               fontFamily: UI_FONT, fontSize: 13, fontWeight: 500, color: "#555555",
               border: "1px solid #C8C2B8", borderRadius: 4, padding: "5px 14px",
-              background: "transparent", letterSpacing: "0.04em",
-              transition: "all 0.15s",
+              background: "transparent", letterSpacing: "0.04em", transition: "all 0.15s",
             }}
             onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.borderColor = "#A0A09A"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
           >
             download
           </button>
+
+          {/* Avatar — se logado abre perfil, se não abre auth modal */}
           <div
-            onClick={e => { e.stopPropagation(); setProfileOpen(p => !p); }}
+            onClick={e => {
+              e.stopPropagation();
+              user ? setProfileOpen(p => !p) : openAuth();
+            }}
+            title={user ? undefined : "Entrar / Criar conta"}
             style={{
               width: 34, height: 34, borderRadius: "50%",
-              backgroundColor: avatarSrc ? "transparent" : "#DDD8D0",
+              backgroundColor: (!user || !avatarSrc) ? "#DDD8D0" : "transparent",
               border: `1px solid ${profileOpen ? "#A0A09A" : "#C8C2B8"}`,
               overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", transition: "border-color 0.12s",
-              flexShrink: 0,
+              cursor: "pointer", transition: "border-color 0.12s", flexShrink: 0,
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "#A0A09A"}
             onMouseLeave={e => e.currentTarget.style.borderColor = profileOpen ? "#A0A09A" : "#C8C2B8"}
           >
-            {avatarSrc
+            {(user && avatarSrc)
               ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#888888" }}>{avatarInitial}</span>
+              : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#888888" }}>
+                  {user ? avatarInitial : "?"}
+                </span>
             }
           </div>
         </div>
@@ -1513,8 +1536,16 @@ export default function App() {
       />
       <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} />
 
+      {/* ── AUTH MODAL ───────────────────────────────────────────────────── */}
+      {showAuthModal && (
+        <Auth
+          onClose={() => setShowAuthModal(false)}
+          message={authMessage}
+        />
+      )}
+
       {/* ── PROFILE DROPDOWN ─────────────────────────────────────────────── */}
-      {profileOpen && (
+      {profileOpen && user && (
         <ProfileDropdown
           userName={userName} setUserName={setUserName}
           avatarSrc={avatarSrc} onAvatarChange={src => setAvatarSrc(src)}

@@ -40,14 +40,12 @@ export default function Auth({ onClose, message }) {
             : error.message
         )
       }
-      // Se ok, onAuthStateChange atualiza `user` → App fecha o modal
-    } else {
+    } else if (mode === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: window.location.origin },
       })
-
       if (error) {
         setError(
           error.message.includes('already registered')
@@ -55,10 +53,17 @@ export default function Auth({ onClose, message }) {
             : error.message
         )
       } else if (data.user && !data.session) {
-        // Email de confirmação foi enviado
         setInfo('Cadastro realizado! Verifique seu e-mail e clique no link de confirmação para ativar sua conta.')
       }
-      // Se confirmação desabilitada no Supabase, data.session existe → App fecha o modal
+    } else if (mode === 'forgot') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://journal-app-ten-umber.vercel.app/reset-password',
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        setInfo('Enviamos um link para redefinir sua senha. Verifique seu e-mail.')
+      }
     }
     setLoading(false)
   }
@@ -103,7 +108,7 @@ export default function Auth({ onClose, message }) {
             jrnl
           </div>
           <div style={{ fontSize: 13, color: '#888888', marginTop: 4 }}>
-            {mode === 'login' ? 'entrar na sua conta' : 'criar nova conta'}
+            {mode === 'login' ? 'entrar na sua conta' : mode === 'signup' ? 'criar nova conta' : 'redefinir senha'}
           </div>
         </div>
 
@@ -136,12 +141,24 @@ export default function Auth({ onClose, message }) {
               onFocus={e => { e.target.style.borderColor = '#888888'; }}
               onBlur={e => { e.target.style.borderColor = '#C8C2B8'; }}
             />
-            <input
-              type="password" placeholder="senha (mín. 6 caracteres)" value={password} required minLength={6}
-              onChange={e => setPassword(e.target.value)} style={inputStyle}
-              onFocus={e => { e.target.style.borderColor = '#888888'; }}
-              onBlur={e => { e.target.style.borderColor = '#C8C2B8'; }}
-            />
+            {mode !== 'forgot' && (
+              <input
+                type="password" placeholder="senha (mín. 6 caracteres)" value={password} required minLength={6}
+                onChange={e => setPassword(e.target.value)} style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = '#888888'; }}
+                onBlur={e => { e.target.style.borderColor = '#C8C2B8'; }}
+              />
+            )}
+            {mode === 'login' && (
+              <div
+                onClick={() => reset('forgot')}
+                style={{ fontSize: 12, color: '#888888', textAlign: 'right', cursor: 'pointer', transition: 'color 0.12s' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#1A1A1A'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#888888'; }}
+              >
+                Esqueci minha senha
+              </div>
+            )}
 
             {error && (
               <div style={{
@@ -162,13 +179,13 @@ export default function Auth({ onClose, message }) {
                 transition: 'background 0.15s', cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
-              {loading ? '...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+              {loading ? '...' : mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Enviar link'}
             </button>
           </form>
         )}
 
         {/* Toggle modo */}
-        {!info && (
+        {!info && mode !== 'forgot' && (
           <div style={{ textAlign: 'center', fontSize: 13, color: '#888888' }}>
             {mode === 'login' ? (
               <>Não tem conta?{' '}
@@ -188,10 +205,10 @@ export default function Auth({ onClose, message }) {
           </div>
         )}
 
-        {/* Voltar para login (só aparece na tela de confirmação de email) */}
-        {info && (
+        {/* Voltar para login */}
+        {(info || mode === 'forgot') && (
           <div
-            onClick={() => { setInfo(null); setMode('login'); setEmail(''); setPassword(''); }}
+            onClick={() => reset('login')}
             style={{
               textAlign: 'center', fontSize: 13, color: '#888888',
               cursor: 'pointer', transition: 'color 0.12s',

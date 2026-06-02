@@ -1027,6 +1027,12 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === 'ok') {
+        window.history.replaceState({}, '', '/');
+        setAuthMessage('Senha atualizada com sucesso! Faça login com a nova senha.');
+        setShowAuthModal(true);
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);

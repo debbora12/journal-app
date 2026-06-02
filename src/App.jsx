@@ -1417,7 +1417,7 @@ export default function App() {
   // Loading inicial mínimo (só enquanto verifica sessão)
   if (authLoading) return (
     <div style={{ width:"100vw", height:"100vh", background:"#2D5A3D", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontSize:18, color:"#4A9060", letterSpacing:"0.1em" }}>jrnl</div>
+      <img src={logo} alt="jrnl" style={{ height: 24, opacity: 0.5, userSelect: "none", pointerEvents: "none" }} />
     </div>
   );
 

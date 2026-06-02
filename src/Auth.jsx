@@ -188,6 +188,21 @@ export default function Auth({ onClose, message }) {
           </div>
         )}
 
+        {/* Voltar para login (só aparece na tela de confirmação de email) */}
+        {info && (
+          <div
+            onClick={() => { setInfo(null); setMode('login'); setEmail(''); setPassword(''); }}
+            style={{
+              textAlign: 'center', fontSize: 13, color: '#888888',
+              cursor: 'pointer', transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#1A1A1A'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#888888'; }}
+          >
+            ← voltar para o login
+          </div>
+        )}
+
         {/* Continuar sem login */}
         {onClose && (
           <div

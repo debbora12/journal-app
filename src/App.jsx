@@ -712,13 +712,17 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
       <textarea
         ref={textareaRef} value={text} placeholder="escreva algo..."
         onChange={e => onTextChange(e.target.value)}
-        onMouseDown={e => { e.stopPropagation(); onSelect(); }}
+        onMouseDown={e => {
+          // Propaga para o container iniciar drag; onSelect separa clique de arrasto
+          onSelect();
+          onMouseDownDrag(e);
+        }}
         rows={1}
         style={{
           display: "block", width: "100%", background: "transparent",
           border: "none", outline: "none", resize: "none",
           fontFamily, fontSize, color,
-          cursor: "text", padding: 0, lineHeight: 1.45, overflow: "hidden", userSelect: "text",
+          cursor: "inherit", padding: 0, lineHeight: 1.45, overflow: "hidden", userSelect: "text",
         }}
       />
       {isSelected && (
@@ -787,7 +791,8 @@ function JournalPage({
     dragRef.current = { type: "text", id: blk.id, dkey: dateKey,
       pageLeft: rect.left, pageTop: rect.top,
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
-      mouseOffsetX: e.clientX - rect.left - blk.x, mouseOffsetY: e.clientY - rect.top - blk.y };
+      mouseOffsetX: e.clientX - rect.left - blk.x, mouseOffsetY: e.clientY - rect.top - blk.y,
+      startClientX: e.clientX, startClientY: e.clientY }; // threshold: só move se arrastou >4px
     onSelectId(blk.id);
   };
   const handleTextResizeStart = (blk, e, corner) => {
@@ -795,6 +800,7 @@ function JournalPage({
     resizeRef.current = { type: "text", id: blk.id, dkey: dateKey, corner,
       startX: e.clientX, startY: e.clientY,
       startW: blk.width, startPX: blk.x, startPY: blk.y,
+      startFontSize: blk.fontSize ?? 16,
       rotation: blk.rotation ?? 0 };
   };
   const handleTextRotateStart = (blk, e) => {
@@ -1209,6 +1215,9 @@ export default function App() {
           });
         }
         if (type === "text") {
+          // Threshold de 4px: evita mover ao simplesmente clicar no textarea
+          const { startClientX, startClientY } = dragRef.current;
+          if (Math.abs(e.clientX - startClientX) + Math.abs(e.clientY - startClientY) < 4) return;
           setPageData(prev => {
             const srcPage = prev[dkey]; if (!srcPage) return prev;
             const blk = (srcPage.textBlocks || []).find(b => b.id === id); if (!blk) return prev;
@@ -1310,18 +1319,20 @@ export default function App() {
             return { ...prev, [dkey]: { ...page, papers: (page.papers||[]).map(p => p.id===id?{...p,width:newW,height:newH,x:newX,y:newY}:p) } };
           });
         }
-        // Texto: resize apenas de largura, rotation-aware
+        // Texto: resize escala fontSize proporcionalmente (como sticker), largura acompanha
         if (type === "text") {
-          const { rotation: rot = 0 } = resizeRef.current;
+          const { rotation: rot = 0, startFontSize = 16 } = resizeRef.current;
           const rad = rot * Math.PI / 180;
           const localDX = dx * Math.cos(rad) + dy * Math.sin(rad);
           setPageData(prev => {
             const page = prev[dkey]; if (!page) return prev;
             let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
-            newW = clamp(newW, 60, PAGE_W);
+            newW = clamp(newW, 40, PAGE_W);
+            const scale = newW / startW;
+            const newFontSize = clamp(Math.round(startFontSize * scale), 6, 120);
             let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
             newX = clamp(newX, 0, PAGE_W - newW);
-            return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id?{...b,width:newW,x:newX}:b) } };
+            return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id?{...b,width:newW,x:newX,fontSize:newFontSize}:b) } };
           });
         }
       }

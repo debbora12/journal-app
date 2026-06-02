@@ -681,8 +681,8 @@ function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMous
 }
 
 // ── TextBlock ─────────────────────────────────────────────────────────────────
-function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange }) {
-  const { x, y, width, text, fontFamily, fontSize, color, zIndex } = data;
+function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate }) {
+  const { x, y, width, text, fontFamily, fontSize, color, zIndex, rotation } = data;
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -698,9 +698,13 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
 
   return (
     <div
+      data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, width, zIndex,
-        cursor: "grab", outline: isSelected ? "1px dashed #888888" : "none",
+        cursor: "grab",
+        transform: `rotate(${rotation ?? 0}deg)`,
+        transformOrigin: "center center",
+        outline: isSelected ? "1px dashed #888888" : "none",
         outlineOffset: 3, boxSizing: "border-box", userSelect: "none",
       }}
       onMouseDown={onMouseDownDrag}
@@ -718,10 +722,21 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
         }}
       />
       {isSelected && (
-        <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-          style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
-          ×
-        </div>
+        <>
+          <RotationHandle onMouseDown={onMouseDownRotate} />
+          <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
+            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
+            ×
+          </div>
+          {/* Resize handles — apenas largura (esquerda e direita) */}
+          {["tl","tr","bl","br"].map(corner => {
+            const pos = { tl:{top:-5,left:-5}, tr:{top:-5,right:-5}, bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5} }[corner];
+            return (
+              <div key={corner} onMouseDown={e => { e.stopPropagation(); onMouseDownResize(e, corner); }}
+                style={{ position: "absolute", width: 10, height: 10, background: "#FFFFFF", border: "1px solid #888888", cursor: RESIZE_CURSORS[corner], zIndex: 9999, ...pos }} />
+            );
+          })}
+        </>
       )}
     </div>
   );
@@ -774,6 +789,23 @@ function JournalPage({
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
       mouseOffsetX: e.clientX - rect.left - blk.x, mouseOffsetY: e.clientY - rect.top - blk.y };
     onSelectId(blk.id);
+  };
+  const handleTextResizeStart = (blk, e, corner) => {
+    if (e.button !== 0) return; e.stopPropagation();
+    resizeRef.current = { type: "text", id: blk.id, dkey: dateKey, corner,
+      startX: e.clientX, startY: e.clientY,
+      startW: blk.width, startPX: blk.x, startPY: blk.y,
+      rotation: blk.rotation ?? 0 };
+  };
+  const handleTextRotateStart = (blk, e) => {
+    if (e.button !== 0) return; e.stopPropagation();
+    const pageRect = pageRef.current.getBoundingClientRect();
+    // Usa o bounding rect real do elemento para centro preciso
+    const el = pageRef.current.querySelector(`[data-id="${blk.id}"]`);
+    const elRect = el ? el.getBoundingClientRect() : null;
+    rotateRef.current = { type: "text", id: blk.id, dkey: dateKey,
+      centerX: elRect ? elRect.left + elRect.width / 2  : pageRect.left + blk.x + blk.width / 2,
+      centerY: elRect ? elRect.top  + elRect.height / 2 : pageRect.top  + blk.y + 20 };
   };
 
   const handleStickerDragStart = (stk, e) => {
@@ -867,6 +899,8 @@ function JournalPage({
       {textBlocks.map(blk => (
         <TextBlock key={blk.id} data={blk} isSelected={selectedId === blk.id}
           onMouseDownDrag={e => handleTextDragStart(blk, e)}
+          onMouseDownResize={(e, corner) => handleTextResizeStart(blk, e, corner)}
+          onMouseDownRotate={e => handleTextRotateStart(blk, e)}
           onSelect={() => onSelectId(blk.id)}
           onDelete={() => onDeleteTextBlock(dateKey, blk.id)}
           onTextChange={text => onChangeTextBlock(dateKey, blk.id, { text })} />
@@ -1276,6 +1310,20 @@ export default function App() {
             return { ...prev, [dkey]: { ...page, papers: (page.papers||[]).map(p => p.id===id?{...p,width:newW,height:newH,x:newX,y:newY}:p) } };
           });
         }
+        // Texto: resize apenas de largura, rotation-aware
+        if (type === "text") {
+          const { rotation: rot = 0 } = resizeRef.current;
+          const rad = rot * Math.PI / 180;
+          const localDX = dx * Math.cos(rad) + dy * Math.sin(rad);
+          setPageData(prev => {
+            const page = prev[dkey]; if (!page) return prev;
+            let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
+            newW = clamp(newW, 60, PAGE_W);
+            let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
+            newX = clamp(newX, 0, PAGE_W - newW);
+            return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id?{...b,width:newW,x:newX}:b) } };
+          });
+        }
       }
 
       if (rotateRef.current) {
@@ -1286,6 +1334,7 @@ export default function App() {
           if (type === "polaroid") return { ...prev, [dkey]: { ...page, polaroids: page.polaroids.map(p => p.id===id?{...p,rotation:newAngle}:p) } };
           if (type === "sticker")  return { ...prev, [dkey]: { ...page, stickers:  page.stickers.map(s  => s.id===id?{...s,rotation:newAngle}:s) } };
           if (type === "paper")    return { ...prev, [dkey]: { ...page, papers:    (page.papers||[]).map(p => p.id===id?{...p,rotation:newAngle}:p) } };
+          if (type === "text")     return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id?{...b,rotation:newAngle}:b) } };
           return prev;
         });
       }
@@ -1343,7 +1392,7 @@ export default function App() {
     const blk = { id: `txt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
       x: Math.round((PAGE_W-W)/2), y: Math.round(PAGE_H/2-24),
       width: W, text: "", fontFamily: FONTS[0].value, fontSize: 16, color: "#1A1A1A",
-      zIndex: maxZRef.current };
+      rotation: 0, zIndex: maxZRef.current };
     mutatePage(rightKey, page => ({ ...page, textBlocks: [...(page.textBlocks||[]), blk] }));
     setSelectedId(blk.id);
   };

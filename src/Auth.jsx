@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
+import logo from './assets/logo.svg'
 
 const UI_FONT = "'Barlow Condensed', sans-serif"
 
@@ -104,10 +105,8 @@ export default function Auth({ onClose, message }) {
       >
         {/* Logo + título */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: '0.06em', color: '#1A1A1A' }}>
-            jrnl
-          </div>
-          <div style={{ fontSize: 13, color: '#888888', marginTop: 4 }}>
+          <img src={logo} alt="jrnl" style={{ height: 32, userSelect: 'none', pointerEvents: 'none' }} />
+          <div style={{ fontSize: 13, color: '#888888', marginTop: 8 }}>
             {mode === 'login' ? 'entrar na sua conta' : mode === 'signup' ? 'criar nova conta' : 'redefinir senha'}
           </div>
         </div>

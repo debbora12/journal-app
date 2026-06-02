@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
+import logo from "./assets/logo.svg";
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const PAGE_W    = 420;
@@ -1452,9 +1453,7 @@ export default function App() {
         }}
       >
         {/* Left: logo */}
-        <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "0.05em", color: "#1A1A1A", userSelect: "none" }}>
-          jrnl
-        </div>
+        <img src={logo} alt="jrnl" style={{ height: 26, userSelect: "none", pointerEvents: "none" }} />
 
         {/* Center: save status */}
         <div style={{ fontSize: 13, fontWeight: 400, color: "#AAAAAA", letterSpacing: "0.02em" }}>

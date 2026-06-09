@@ -218,7 +218,7 @@ const PAPERS = [
 ];
 
 // ── SidebarIcon ───────────────────────────────────────────────────────────────
-const UI_FONT = "'Barlow Condensed', sans-serif";
+const UI_FONT = "'Futura', 'Jost', 'Nunito', sans-serif";
 
 function SidebarIcon({ icon: Icon, label, onClick, active }) {
   const [hov, setHov] = useState(false);
@@ -682,14 +682,21 @@ function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMous
 
 // ── TextBlock ─────────────────────────────────────────────────────────────────
 function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate }) {
-  const { x, y, width, text, fontFamily, fontSize, color, zIndex, rotation } = data;
+  const { x, y, text, fontFamily, fontSize, color, zIndex, rotation } = data;
   const textareaRef = useRef(null);
+  const mirrorRef   = useRef(null);
 
   useEffect(() => {
-    const ta = textareaRef.current; if (!ta) return;
+    const ta     = textareaRef.current;
+    const mirror = mirrorRef.current;
+    if (!ta || !mirror) return;
+    // Auto-height
     ta.style.height = "auto";
     ta.style.height = ta.scrollHeight + "px";
-  }, [text, fontSize, fontFamily, width]);
+    // Auto-width: mede a largura máxima do conteúdo via espelho
+    const w = Math.max(mirror.scrollWidth + 4, 24);
+    ta.style.width = w + "px";
+  }, [text, fontSize, fontFamily]);
 
   useEffect(() => {
     if (data.text === "" && textareaRef.current) textareaRef.current.focus();
@@ -700,29 +707,43 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
     <div
       data-id={data.id}
       style={{
-        position: "absolute", left: x, top: y, width, zIndex,
+        position: "absolute", left: x, top: y, zIndex,
+        display: "inline-block",            // largura se ajusta ao conteúdo
         cursor: "grab",
         transform: `rotate(${rotation ?? 0}deg)`,
         transformOrigin: "center center",
         outline: isSelected ? "1px dashed #888888" : "none",
-        outlineOffset: 3, boxSizing: "border-box", userSelect: "none",
+        outlineOffset: 3, userSelect: "none",
       }}
       onMouseDown={onMouseDownDrag}
     >
+      {/* Espelho invisível para medir largura real do texto */}
+      <span
+        ref={mirrorRef}
+        aria-hidden
+        style={{
+          visibility: "hidden", position: "fixed", top: -9999, left: -9999,
+          whiteSpace: "pre",              // sem quebra: mede linha mais longa
+          fontFamily, fontSize, lineHeight: 1.45, pointerEvents: "none",
+        }}
+      >
+        {text || "escreva algo..."}
+      </span>
+
       <textarea
         ref={textareaRef} value={text} placeholder="escreva algo..."
         onChange={e => onTextChange(e.target.value)}
         onMouseDown={e => {
-          // Propaga para o container iniciar drag; onSelect separa clique de arrasto
           onSelect();
           onMouseDownDrag(e);
         }}
         rows={1}
         style={{
-          display: "block", width: "100%", background: "transparent",
+          display: "block", background: "transparent",
           border: "none", outline: "none", resize: "none",
           fontFamily, fontSize, color,
-          cursor: "inherit", padding: 0, lineHeight: 1.45, overflow: "hidden", userSelect: "text",
+          cursor: "inherit", padding: 0, lineHeight: 1.45, overflow: "hidden",
+          userSelect: "text", minWidth: 24,
         }}
       />
       {isSelected && (
@@ -1484,7 +1505,7 @@ export default function App() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Caveat:wght@400;600&family=Covered+By+Your+Grace&family=Coming+Soon&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Caveat:wght@400;600&family=Covered+By+Your+Grace&family=Coming+Soon&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #2D5A3D; }
         button { outline: none; border: none; background: none; cursor: pointer; }
@@ -1526,21 +1547,8 @@ export default function App() {
           }
         </div>
 
-        {/* Right: download + avatar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={() => !user && openAuth("Login necessário para fazer o download.")}
-            style={{
-              fontFamily: UI_FONT, fontSize: 13, fontWeight: 500, color: "#555555",
-              border: "1px solid #C8C2B8", borderRadius: 4, padding: "5px 14px",
-              background: "transparent", letterSpacing: "0.04em", transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.borderColor = "#A0A09A"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
-          >
-            download
-          </button>
-
+        {/* Right: avatar */}
+        <div style={{ display: "flex", alignItems: "center" }}>
           {/* Avatar — se logado abre perfil, se não abre auth modal */}
           <div
             onClick={e => {

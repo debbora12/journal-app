@@ -1547,33 +1547,43 @@ export default function App() {
           }
         </div>
 
-        {/* Right: avatar */}
+        {/* Right: login button (deslogado) ou avatar (logado) */}
         <div style={{ display: "flex", alignItems: "center" }}>
-          {/* Avatar — se logado abre perfil, se não abre auth modal */}
-          <div
-            onClick={e => {
-              e.stopPropagation();
-              user ? setProfileOpen(p => !p) : openAuth();
-            }}
-            title={user ? undefined : "Entrar / Criar conta"}
-            style={{
-              width: 34, height: 34, borderRadius: "50%",
-              backgroundColor: (!user || !avatarSrc) ? "#DDD8D0" : "transparent",
-              border: `1px solid ${profileOpen ? "#A0A09A" : "#C8C2B8"}`,
-              overflow: "hidden",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", transition: "border-color 0.12s", flexShrink: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "#A0A09A"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = profileOpen ? "#A0A09A" : "#C8C2B8"}
-          >
-            {(user && avatarSrc)
-              ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#888888" }}>
-                  {user ? avatarInitial : "?"}
-                </span>
-            }
-          </div>
+          {user ? (
+            <div
+              onClick={e => { e.stopPropagation(); setProfileOpen(p => !p); }}
+              style={{
+                width: 34, height: 34, borderRadius: "50%",
+                backgroundColor: avatarSrc ? "transparent" : "#DDD8D0",
+                border: `1px solid ${profileOpen ? "#A0A09A" : "#C8C2B8"}`,
+                overflow: "hidden",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", transition: "border-color 0.12s", flexShrink: 0,
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "#A0A09A"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = profileOpen ? "#A0A09A" : "#C8C2B8"}
+            >
+              {avatarSrc
+                ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#888888" }}>{avatarInitial}</span>
+              }
+            </div>
+          ) : (
+            <button
+              onClick={e => { e.stopPropagation(); openAuth(); }}
+              style={{
+                fontFamily: UI_FONT, fontSize: 13, fontWeight: 500,
+                textTransform: "uppercase", letterSpacing: "0.06em",
+                color: "#555555", border: "1px solid #C8C2B8", borderRadius: 4,
+                padding: "6px 16px", background: "transparent",
+                cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.borderColor = "#A0A09A"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
+            >
+              Login
+            </button>
+          )}
         </div>
       </div>
 

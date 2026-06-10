@@ -1533,18 +1533,18 @@ export default function App() {
           fontFamily: UI_FONT,
         }}
       >
-        {/* Left: logo */}
-        <img src={logo} alt="jrnl" style={{ height: 26, userSelect: "none", pointerEvents: "none" }} />
-
-        {/* Center: save status */}
-        <div style={{ fontSize: 13, fontWeight: 400, color: "#AAAAAA", letterSpacing: "0.02em" }}>
-          {user
-            ? (lastSave ? `Salvo às ${lastSave}` : "")
-            : <span style={{ cursor: "pointer" }} onClick={() => openAuth("Faça login para sincronizar seus dados.")}>
-                dados em cache —{" "}
-                <span style={{ textDecoration: "underline", color: "#888888" }}>fazer login</span>
-              </span>
-          }
+        {/* Left: logo + save status */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img src={logo} alt="jrnl" style={{ height: 26, userSelect: "none", pointerEvents: "none" }} />
+          <div style={{ fontSize: 13, fontWeight: 400, color: "#AAAAAA", letterSpacing: "0.02em" }}>
+            {user
+              ? (lastSave ? `Salvo às ${lastSave}` : "")
+              : <span style={{ cursor: "pointer" }} onClick={() => openAuth("Faça login para sincronizar seus dados.")}>
+                  dados em cache —{" "}
+                  <span style={{ textDecoration: "underline", color: "#888888" }}>fazer login</span>
+                </span>
+            }
+          </div>
         </div>
 
         {/* Right: login button (deslogado) ou avatar (logado) */}

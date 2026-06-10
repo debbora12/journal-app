@@ -51,9 +51,7 @@ const COLORS = [
 const MONTHS_PT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 function formatDate(date) {
-  const d = String(date.getDate()).padStart(2, "0");
-  const m = MONTHS_PT[date.getMonth()];
-  return `${d} ${m}`;
+  return `${date.getDate()} ${MONTHS_PT[date.getMonth()]}`;
 }
 function addDays(base, days) {
   const d = new Date(base);
@@ -1075,9 +1073,7 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const today = useRef((() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d;
-  })()).current;
+  const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
 
   // ── Auth state ──────────────────────────────────────────────────────────────
   const [user, setUser]                   = useState(null);

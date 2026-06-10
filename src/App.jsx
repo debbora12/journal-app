@@ -42,7 +42,7 @@ const FONTS = [
 ];
 
 const COLORS = [
-  "#1A1A1A", "#FFFFFF", "#888888", "#C0392B",
+  "#1A1A1A", "#FFFFFF", "#969287", "#C0392B",
   "#E91E8C", "#8E44AD", "#2980B9", "#27AE60",
   "#F1C40F", "#E67E22", "#D4C5A9", "#6D4C41",
 ];
@@ -217,55 +217,6 @@ const PAPERS = [
   { key: "paper46", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2046.png" },
 ];
 
-// ── Paper texture ─────────────────────────────────────────────────────────────
-function generatePaperTexture() {
-  try {
-    const size = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#E8E0D0';
-    ctx.fillRect(0, 0, size, size);
-    // Layer 1: fine grain
-    const img1 = ctx.getImageData(0, 0, size, size);
-    const d1 = img1.data;
-    for (let i = 0; i < d1.length; i += 4) {
-      const n = Math.random() * 36 - 18;
-      d1[i]   = Math.max(0, Math.min(255, d1[i]   + n));
-      d1[i+1] = Math.max(0, Math.min(255, d1[i+1] + n));
-      d1[i+2] = Math.max(0, Math.min(255, d1[i+2] + n));
-    }
-    ctx.putImageData(img1, 0, 0);
-    // Layer 2: 32×32 block tone variation
-    const img2 = ctx.getImageData(0, 0, size, size);
-    const d2 = img2.data;
-    for (let by = 0; by < size; by += 32) {
-      for (let bx = 0; bx < size; bx += 32) {
-        const lum = Math.random() * 16 - 8;
-        for (let y = by; y < Math.min(by + 32, size); y++) {
-          for (let x = bx; x < Math.min(bx + 32, size); x++) {
-            const idx = (y * size + x) * 4;
-            d2[idx]   = Math.max(0, Math.min(255, d2[idx]   + lum));
-            d2[idx+1] = Math.max(0, Math.min(255, d2[idx+1] + lum));
-            d2[idx+2] = Math.max(0, Math.min(255, d2[idx+2] + lum));
-          }
-        }
-      }
-    }
-    ctx.putImageData(img2, 0, 0);
-    // Layer 3: thin horizontal fiber lines
-    let y = 0;
-    while (y < size) {
-      const op = 0.01 + Math.random() * 0.03;
-      ctx.strokeStyle = `rgba(200,184,144,${op})`;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
-      y += 3 + Math.floor(Math.random() * 2);
-    }
-    return canvas.toDataURL('image/png');
-  } catch { return ''; }
-}
-
 // ── SidebarIcon ───────────────────────────────────────────────────────────────
 const UI_FONT = "'Futura', 'Jost', 'Nunito', sans-serif";
 
@@ -280,11 +231,11 @@ function SidebarIcon({ icon: Icon, label, onClick, active }) {
         height: 48, padding: "0 20px",
         display: "flex", alignItems: "center", gap: 12,
         cursor: "pointer", userSelect: "none",
-        background: active ? "#D8D2C8" : hov ? "#E0DAD0" : "transparent",
+        background: active ? "#E5E0D2" : hov ? "#E5E0D2" : "transparent",
         borderLeft: `2px solid ${active ? "#1A1A1A" : "transparent"}`,
         borderBottom: "0.5px solid #CFC7B8",
         transition: "background 0.12s",
-        color: active ? "#1A1A1A" : hov ? "#333333" : "#AAAAAA",
+        color: active ? "#1A1A1A" : hov ? "#656259" : "#969287",
         flexShrink: 0,
       }}
     >
@@ -310,7 +261,7 @@ function PanelHeader({ label, onClose }) {
       padding: "14px 16px 12px", borderBottom: "1px solid #CFC7B8", flexShrink: 0,
     }}>
       <span style={{
-        fontFamily: UI_FONT, fontSize: 13, fontWeight: 600, color: "#555555",
+        fontFamily: UI_FONT, fontSize: 13, fontWeight: 600, color: "#656259",
         textTransform: "uppercase", letterSpacing: "0.1em", userSelect: "none",
       }}>
         {label}
@@ -321,8 +272,8 @@ function PanelHeader({ label, onClose }) {
         onMouseLeave={() => setHov(false)}
         style={{
           width: 24, height: 24,
-          background: hov ? "#D8D2C8" : "transparent",
-          border: "none", color: hov ? "#333333" : "#AAAAAA",
+          background: hov ? "#E5E0D2" : "transparent",
+          border: "none", color: hov ? "#656259" : "#969287",
           cursor: "pointer", fontSize: 17,
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: 0, lineHeight: 1, borderRadius: 4,
@@ -362,15 +313,11 @@ function NavArrow({ direction, onClick, disabled }) {
 }
 
 // ── Panel base style ──────────────────────────────────────────────────────────
-const panelBase = (open, paperTexture = '') => ({
+const panelBase = (open) => ({
   position: "fixed",
   left: SIDEBAR_W, top: HEADER_H,
   width: 220, height: `calc(100vh - ${HEADER_H}px)`,
-  backgroundColor: "#E8E0D0",
-  backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
-  backgroundRepeat: 'repeat',
-  backgroundSize: '256px 256px',
-  backgroundBlendMode: 'multiply',
+  background: "#F3F0E6",
   borderRight: "1px solid #CFC7B8",
   zIndex: 100, display: "flex", flexDirection: "column", boxSizing: "border-box",
   transform: open ? "translateX(0)" : "translateX(-220px)",
@@ -379,10 +326,10 @@ const panelBase = (open, paperTexture = '') => ({
 });
 
 // ── CameraPanel ───────────────────────────────────────────────────────────────
-function CameraPanel({ fileInputRef, onClose, open, paperTexture }) {
+function CameraPanel({ fileInputRef, onClose, open }) {
   const [hov, setHov] = useState(false);
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="polaroids" onClose={onClose} />
       <div style={{ padding: 16 }}>
         <button
@@ -391,8 +338,8 @@ function CameraPanel({ fileInputRef, onClose, open, paperTexture }) {
           onMouseLeave={() => setHov(false)}
           style={{
             border: `1px solid ${hov ? "#A0A09A" : "#C8C2B8"}`,
-            background: hov ? "#E0DAD0" : "transparent",
-            color: hov ? "#333333" : "#888888",
+            background: hov ? "#E5E0D2" : "transparent",
+            color: hov ? "#656259" : "#969287",
             fontFamily: UI_FONT, fontSize: 13, fontWeight: 500,
             padding: "9px 0", width: "100%", cursor: "pointer",
             transition: "all 0.15s", borderRadius: 4, letterSpacing: "0.04em",
@@ -406,14 +353,14 @@ function CameraPanel({ fileInputRef, onClose, open, paperTexture }) {
 }
 
 // ── TextPanel ─────────────────────────────────────────────────────────────────
-function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, open, paperTexture }) {
+function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, open }) {
   const [hovBtn, setHovBtn] = useState(false);
   const curFont  = selectedBlock?.fontFamily || FONTS[0].value;
   const curColor = selectedBlock?.color      || "#1A1A1A";
 
   const SLabel = ({ children }) => (
     <div style={{
-      fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#888888",
+      fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#969287",
       textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, userSelect: "none",
     }}>
       {children}
@@ -421,7 +368,7 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
   );
 
   return (
-    <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open, paperTexture), overflowY: "auto" }}>
+    <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open), overflowY: "auto" }}>
       <PanelHeader label="texto" onClose={onClose} />
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18 }}>
         <button
@@ -430,8 +377,8 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
           onMouseLeave={() => setHovBtn(false)}
           style={{
             border: `1px solid ${hovBtn ? "#A0A09A" : "#C8C2B8"}`,
-            background: hovBtn ? "#E0DAD0" : "transparent",
-            color: hovBtn ? "#333333" : "#888888",
+            background: hovBtn ? "#E5E0D2" : "transparent",
+            color: hovBtn ? "#656259" : "#969287",
             fontFamily: UI_FONT, fontSize: 13, fontWeight: 500,
             padding: "9px 0", width: "100%", cursor: "pointer",
             transition: "all 0.15s", borderRadius: 4, letterSpacing: "0.04em",
@@ -451,9 +398,9 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
                   onClick={() => onApplyToSelected({ fontFamily: f.value })}
                   style={{
                     width: "100%", padding: "8px 10px",
-                    background: active ? "#D8D2C8" : "transparent",
+                    background: active ? "#E5E0D2" : "transparent",
                     border: `1px solid ${active ? "#A0A09A" : "#C8C2B8"}`,
-                    color: active ? "#1A1A1A" : "#666666",
+                    color: active ? "#1A1A1A" : "#969287",
                     fontSize: 14, fontFamily: f.value, textAlign: "left",
                     cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
                   }}
@@ -490,10 +437,10 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
 }
 
 // ── StickerPanel ──────────────────────────────────────────────────────────────
-function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
+function StickerPanel({ onAddSticker, onClose, open }) {
   const [collapsed, setCollapsed] = useState({});
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="stickers" onClose={onClose} />
       <div style={{ overflowY: "auto", flex: 1 }}>
         {STICKER_CATEGORIES.map(cat => {
@@ -504,7 +451,7 @@ function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
                 onClick={() => setCollapsed(p => ({ ...p, [cat.name]: !p[cat.name] }))}
                 style={{
                   padding: "9px 16px",
-                  fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#888888",
+                  fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#969287",
                   textTransform: "uppercase", letterSpacing: "0.08em",
                   cursor: "pointer",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -512,7 +459,7 @@ function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
                 }}
               >
                 {cat.name}
-                <span style={{ fontSize: 8, color: "#AAAAAA" }}>{isOpen ? "▼" : "▶"}</span>
+                <span style={{ fontSize: 8, color: "#969287" }}>{isOpen ? "▼" : "▶"}</span>
               </div>
               {isOpen && (
                 <div style={{
@@ -536,7 +483,7 @@ function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
                           transition: "background 0.12s, border-color 0.12s",
                           minHeight: ph + 16,
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#D8D2C8"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#E5E0D2"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "#E8E3DA"; e.currentTarget.style.borderColor = "#CFC7B8"; }}
                       >
                         {def.render(`prev_${type}`, pw, ph)}
@@ -554,12 +501,12 @@ function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
 }
 
 // ── PaperPanel ────────────────────────────────────────────────────────────────
-function PaperPanel({ open, onClose, onAddPaper, paperTexture }) {
+function PaperPanel({ open, onClose, onAddPaper }) {
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="paper" onClose={onClose} />
       <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
-        <div style={{ fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#888888", textTransform: "uppercase", letterSpacing: "0.1em", userSelect: "none" }}>
+        <div style={{ fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#969287", textTransform: "uppercase", letterSpacing: "0.1em", userSelect: "none" }}>
           adicionar papel
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
@@ -604,7 +551,7 @@ function RotationHandle({ onMouseDown }) {
           pointerEvents: "auto", flexShrink: 0,
         }}
       />
-      <div style={{ width: 1, height: 14, background: "#AAAAAA", pointerEvents: "none" }} />
+      <div style={{ width: 1, height: 14, background: "#969287", pointerEvents: "none" }} />
     </div>
   );
 }
@@ -631,7 +578,7 @@ function StickerElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, 
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
           <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
+            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
             ×
           </div>
           {["tl","tr","bl","br"].map(corner => {
@@ -666,7 +613,7 @@ function PaperElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, on
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
           <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
+            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
             ×
           </div>
           {["tl","tr","bl","br"].map(corner => {
@@ -717,7 +664,7 @@ function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMous
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
           <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
+            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
             ×
           </div>
           {["tl","tr","bl","br"].map(corner => {
@@ -803,7 +750,7 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
           <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#555555", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
+            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
             ×
           </div>
           {/* Resize handles — apenas largura (esquerda e direita) */}
@@ -953,7 +900,7 @@ function JournalPage({
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "0 10px",
         fontFamily: UI_FONT, fontSize: 12, fontWeight: 500,
-        color: "#555555", letterSpacing: "0.06em", userSelect: "none",
+        color: "#656259", letterSpacing: "0.06em", userSelect: "none",
       }}>
         {label}
       </div>
@@ -1057,7 +1004,7 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
         >
           {avatarSrc
             ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : <span style={{ fontFamily: UI_FONT, fontSize: 18, fontWeight: 600, color: "#888888" }}>{initial}</span>
+            : <span style={{ fontFamily: UI_FONT, fontSize: 18, fontWeight: 600, color: "#969287" }}>{initial}</span>
           }
         </div>
         <input
@@ -1069,7 +1016,7 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
             textAlign: "center", width: "100%", padding: "3px 0 5px", outline: "none",
           }}
         />
-        <div style={{ fontFamily: UI_FONT, fontSize: 12, color: "#888888", userSelect: "none" }}>
+        <div style={{ fontFamily: UI_FONT, fontSize: 12, color: "#969287", userSelect: "none" }}>
           {dayCount} {dayCount === 1 ? "dia" : "dias"} de journal
         </div>
       </div>
@@ -1080,11 +1027,11 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
               onClick={() => { onNavigate(getOffsetForKey(key)); onClose(); }}
               style={{
                 padding: "8px 16px", fontFamily: UI_FONT, fontSize: 13,
-                color: "#666666", cursor: "pointer", borderBottom: "0.5px solid #D8D2C8",
+                color: "#969287", cursor: "pointer", borderBottom: "0.5px solid #D8D2C8",
                 transition: "background 0.1s, color 0.1s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.color = "#1A1A1A"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#666666"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#E5E0D2"; e.currentTarget.style.color = "#1A1A1A"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#969287"; }}
             >
               {key}
             </div>
@@ -1097,12 +1044,12 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
           onClick={() => avatarFileRef.current?.click()}
           style={{
             width: "100%", padding: "7px 0", background: "transparent",
-            border: "1px solid #C8C2B8", color: "#666666",
+            border: "1px solid #C8C2B8", color: "#969287",
             fontFamily: UI_FONT, fontSize: 13, cursor: "pointer",
             borderRadius: 4, transition: "all 0.12s", letterSpacing: "0.04em",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.borderColor = "#A0A09A"; e.currentTarget.style.color = "#333333"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; e.currentTarget.style.color = "#666666"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#E5E0D2"; e.currentTarget.style.borderColor = "#A0A09A"; e.currentTarget.style.color = "#333333"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; e.currentTarget.style.color = "#969287"; }}
         >
           trocar foto de perfil
         </button>
@@ -1112,11 +1059,11 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
             style={{
               width: "100%", padding: "7px 0", marginTop: 6,
               background: "transparent", border: "1px solid #C8C2B8",
-              color: "#888888", fontFamily: UI_FONT, fontSize: 13,
+              color: "#969287", fontFamily: UI_FONT, fontSize: 13,
               cursor: "pointer", borderRadius: 4, transition: "all 0.12s", letterSpacing: "0.04em",
             }}
             onMouseEnter={e => { e.currentTarget.style.background = "#F5E8E8"; e.currentTarget.style.borderColor = "#C0392B"; e.currentTarget.style.color = "#C0392B"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; e.currentTarget.style.color = "#888888"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; e.currentTarget.style.color = "#969287"; }}
           >
             sair da conta
           </button>
@@ -1181,11 +1128,9 @@ export default function App() {
   const [userName, setUserName]       = useState(() => localStorage.getItem("jrnl_username") || "");
   const [avatarSrc, setAvatarSrc]     = useState(() => localStorage.getItem("jrnl_avatar") || "");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [paperTexture, setPaperTexture] = useState('');
 
   useEffect(() => { localStorage.setItem("jrnl_username", userName); }, [userName]);
   useEffect(() => { localStorage.setItem("jrnl_avatar", avatarSrc); }, [avatarSrc]);
-  useEffect(() => { setPaperTexture(generatePaperTexture()); }, []);
 
   const maxZRef    = useRef(10);
   const fileInputRef = useRef(null);
@@ -1578,11 +1523,7 @@ export default function App() {
         onClick={() => { if (openPanel) setOpenPanel(null); if (profileOpen) setProfileOpen(false); }}
         style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: HEADER_H,
-          backgroundColor: "#E8E0D0",
-          backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
-          backgroundRepeat: 'repeat',
-          backgroundSize: '256px 256px',
-          backgroundBlendMode: 'multiply',
+          background: "#F3F0E6",
           borderBottom: "1px solid #CFC7B8",
           zIndex: 300,
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1593,13 +1534,10 @@ export default function App() {
         {/* Left: logo + save status */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <img src={logo} alt="jrnl" style={{ height: 26, userSelect: "none", pointerEvents: "none" }} />
-          <div style={{ fontSize: 13, fontWeight: 400, color: "#AAAAAA", letterSpacing: "0.02em" }}>
+          <div style={{ fontSize: 13, fontWeight: 400, color: "#969287", letterSpacing: "0.02em" }}>
             {user
               ? (lastSave ? `Salvo às ${lastSave}` : "")
-              : <span style={{ cursor: "pointer" }} onClick={() => openAuth("Faça login para sincronizar seus dados.")}>
-                  dados em cache —{" "}
-                  <span style={{ textDecoration: "underline", color: "#888888" }}>fazer login</span>
-                </span>
+              : "Faça login para salvar as alterações"
             }
           </div>
         </div>
@@ -1622,7 +1560,7 @@ export default function App() {
             >
               {avatarSrc
                 ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#888888" }}>{avatarInitial}</span>
+                : <span style={{ fontFamily: UI_FONT, fontSize: 14, fontWeight: 600, color: "#969287" }}>{avatarInitial}</span>
               }
             </div>
           ) : (
@@ -1631,11 +1569,11 @@ export default function App() {
               style={{
                 fontFamily: UI_FONT, fontSize: 13, fontWeight: 500,
                 textTransform: "uppercase", letterSpacing: "0.06em",
-                color: "#555555", border: "1px solid #C8C2B8", borderRadius: 4,
+                color: "#656259", border: "1px solid #C8C2B8", borderRadius: 4,
                 padding: "6px 16px", background: "transparent",
                 cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#E0DAD0"; e.currentTarget.style.borderColor = "#A0A09A"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#E5E0D2"; e.currentTarget.style.borderColor = "#A0A09A"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
             >
               Login
@@ -1650,11 +1588,7 @@ export default function App() {
         style={{
           position: "fixed", left: 0, top: HEADER_H,
           width: SIDEBAR_W, height: `calc(100vh - ${HEADER_H}px)`,
-          backgroundColor: "#E8E0D0",
-          backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
-          backgroundRepeat: 'repeat',
-          backgroundSize: '256px 256px',
-          backgroundBlendMode: 'multiply',
+          background: "#F3F0E6",
           borderRight: "1px solid #CFC7B8",
           display: "flex", flexDirection: "column",
           zIndex: 200, overflow: "visible",
@@ -1667,17 +1601,16 @@ export default function App() {
       </aside>
 
       {/* ── PANELS ─────────────────────────────────────────────────────────── */}
-      <CameraPanel  fileInputRef={fileInputRef} onClose={closePanel} open={openPanel === "camera"}   paperTexture={paperTexture} />
-      <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} paperTexture={paperTexture} />
+      <CameraPanel  fileInputRef={fileInputRef} onClose={closePanel} open={openPanel === "camera"} />
+      <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} />
       <TextPanel
         selectedBlock={selectedTextBlock}
         onAddTextBlock={addTextBlock}
         onApplyToSelected={applyToSelected}
         onClose={closePanel}
         open={openPanel === "text"}
-        paperTexture={paperTexture}
       />
-      <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} paperTexture={paperTexture} />
+      <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} />
 
       {/* ── AUTH MODAL ───────────────────────────────────────────────────── */}
       {showAuthModal && (

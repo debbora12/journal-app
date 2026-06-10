@@ -217,6 +217,55 @@ const PAPERS = [
   { key: "paper46", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2046.png" },
 ];
 
+// ── Paper texture ─────────────────────────────────────────────────────────────
+function generatePaperTexture() {
+  try {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#E8E0D0';
+    ctx.fillRect(0, 0, size, size);
+    // Layer 1: fine grain
+    const img1 = ctx.getImageData(0, 0, size, size);
+    const d1 = img1.data;
+    for (let i = 0; i < d1.length; i += 4) {
+      const n = Math.random() * 36 - 18;
+      d1[i]   = Math.max(0, Math.min(255, d1[i]   + n));
+      d1[i+1] = Math.max(0, Math.min(255, d1[i+1] + n));
+      d1[i+2] = Math.max(0, Math.min(255, d1[i+2] + n));
+    }
+    ctx.putImageData(img1, 0, 0);
+    // Layer 2: 32×32 block tone variation
+    const img2 = ctx.getImageData(0, 0, size, size);
+    const d2 = img2.data;
+    for (let by = 0; by < size; by += 32) {
+      for (let bx = 0; bx < size; bx += 32) {
+        const lum = Math.random() * 16 - 8;
+        for (let y = by; y < Math.min(by + 32, size); y++) {
+          for (let x = bx; x < Math.min(bx + 32, size); x++) {
+            const idx = (y * size + x) * 4;
+            d2[idx]   = Math.max(0, Math.min(255, d2[idx]   + lum));
+            d2[idx+1] = Math.max(0, Math.min(255, d2[idx+1] + lum));
+            d2[idx+2] = Math.max(0, Math.min(255, d2[idx+2] + lum));
+          }
+        }
+      }
+    }
+    ctx.putImageData(img2, 0, 0);
+    // Layer 3: thin horizontal fiber lines
+    let y = 0;
+    while (y < size) {
+      const op = 0.01 + Math.random() * 0.03;
+      ctx.strokeStyle = `rgba(200,184,144,${op})`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
+      y += 3 + Math.floor(Math.random() * 2);
+    }
+    return canvas.toDataURL('image/png');
+  } catch { return ''; }
+}
+
 // ── SidebarIcon ───────────────────────────────────────────────────────────────
 const UI_FONT = "'Futura', 'Jost', 'Nunito', sans-serif";
 
@@ -233,7 +282,7 @@ function SidebarIcon({ icon: Icon, label, onClick, active }) {
         cursor: "pointer", userSelect: "none",
         background: active ? "#D8D2C8" : hov ? "#E0DAD0" : "transparent",
         borderLeft: `2px solid ${active ? "#1A1A1A" : "transparent"}`,
-        borderBottom: "0.5px solid #D8D2C8",
+        borderBottom: "0.5px solid #CFC7B8",
         transition: "background 0.12s",
         color: active ? "#1A1A1A" : hov ? "#333333" : "#AAAAAA",
         flexShrink: 0,
@@ -258,7 +307,7 @@ function PanelHeader({ label, onClose }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "14px 16px 12px", borderBottom: "1px solid #D8D2C8", flexShrink: 0,
+      padding: "14px 16px 12px", borderBottom: "1px solid #CFC7B8", flexShrink: 0,
     }}>
       <span style={{
         fontFamily: UI_FONT, fontSize: 13, fontWeight: 600, color: "#555555",
@@ -313,12 +362,16 @@ function NavArrow({ direction, onClick, disabled }) {
 }
 
 // ── Panel base style ──────────────────────────────────────────────────────────
-const panelBase = (open) => ({
+const panelBase = (open, paperTexture = '') => ({
   position: "fixed",
   left: SIDEBAR_W, top: HEADER_H,
   width: 220, height: `calc(100vh - ${HEADER_H}px)`,
-  background: "#F0EBE3",
-  borderRight: "1px solid #D8D2C8",
+  backgroundColor: "#E8E0D0",
+  backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
+  backgroundRepeat: 'repeat',
+  backgroundSize: '256px 256px',
+  backgroundBlendMode: 'multiply',
+  borderRight: "1px solid #CFC7B8",
   zIndex: 100, display: "flex", flexDirection: "column", boxSizing: "border-box",
   transform: open ? "translateX(0)" : "translateX(-220px)",
   transition: "transform 0.22s ease",
@@ -326,10 +379,10 @@ const panelBase = (open) => ({
 });
 
 // ── CameraPanel ───────────────────────────────────────────────────────────────
-function CameraPanel({ fileInputRef, onClose, open }) {
+function CameraPanel({ fileInputRef, onClose, open, paperTexture }) {
   const [hov, setHov] = useState(false);
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
       <PanelHeader label="polaroids" onClose={onClose} />
       <div style={{ padding: 16 }}>
         <button
@@ -353,7 +406,7 @@ function CameraPanel({ fileInputRef, onClose, open }) {
 }
 
 // ── TextPanel ─────────────────────────────────────────────────────────────────
-function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, open }) {
+function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, open, paperTexture }) {
   const [hovBtn, setHovBtn] = useState(false);
   const curFont  = selectedBlock?.fontFamily || FONTS[0].value;
   const curColor = selectedBlock?.color      || "#1A1A1A";
@@ -368,7 +421,7 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
   );
 
   return (
-    <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open), overflowY: "auto" }}>
+    <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open, paperTexture), overflowY: "auto" }}>
       <PanelHeader label="texto" onClose={onClose} />
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18 }}>
         <button
@@ -437,10 +490,10 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
 }
 
 // ── StickerPanel ──────────────────────────────────────────────────────────────
-function StickerPanel({ onAddSticker, onClose, open }) {
+function StickerPanel({ onAddSticker, onClose, open, paperTexture }) {
   const [collapsed, setCollapsed] = useState({});
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
       <PanelHeader label="stickers" onClose={onClose} />
       <div style={{ overflowY: "auto", flex: 1 }}>
         {STICKER_CATEGORIES.map(cat => {
@@ -455,7 +508,7 @@ function StickerPanel({ onAddSticker, onClose, open }) {
                   textTransform: "uppercase", letterSpacing: "0.08em",
                   cursor: "pointer",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  userSelect: "none", borderBottom: "0.5px solid #D8D2C8",
+                  userSelect: "none", borderBottom: "0.5px solid #CFC7B8",
                 }}
               >
                 {cat.name}
@@ -479,12 +532,12 @@ function StickerPanel({ onAddSticker, onClose, open }) {
                         style={{
                           display: "flex", alignItems: "center", justifyContent: "center",
                           padding: 8, background: "#E8E3DA", borderRadius: 6,
-                          cursor: "pointer", border: "1px solid #D8D2C8",
+                          cursor: "pointer", border: "1px solid #CFC7B8",
                           transition: "background 0.12s, border-color 0.12s",
                           minHeight: ph + 16,
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = "#D8D2C8"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "#E8E3DA"; e.currentTarget.style.borderColor = "#D8D2C8"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "#E8E3DA"; e.currentTarget.style.borderColor = "#CFC7B8"; }}
                       >
                         {def.render(`prev_${type}`, pw, ph)}
                       </div>
@@ -501,9 +554,9 @@ function StickerPanel({ onAddSticker, onClose, open }) {
 }
 
 // ── PaperPanel ────────────────────────────────────────────────────────────────
-function PaperPanel({ open, onClose, onAddPaper }) {
+function PaperPanel({ open, onClose, onAddPaper, paperTexture }) {
   return (
-    <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
+    <div onClick={e => e.stopPropagation()} style={panelBase(open, paperTexture)}>
       <PanelHeader label="paper" onClose={onClose} />
       <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
         <div style={{ fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#888888", textTransform: "uppercase", letterSpacing: "0.1em", userSelect: "none" }}>
@@ -516,11 +569,11 @@ function PaperPanel({ open, onClose, onAddPaper }) {
               onClick={() => onAddPaper(p.url)}
               style={{
                 width: "100%", aspectRatio: "88 / 64", borderRadius: 6,
-                overflow: "hidden", cursor: "pointer", border: "1px solid #D8D2C8",
+                overflow: "hidden", cursor: "pointer", border: "1px solid #CFC7B8",
                 transition: "border-color 0.12s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#A0A09A"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8D2C8"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#CFC7B8"; }}
             >
               <img src={p.url} alt={p.key} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
@@ -1128,9 +1181,11 @@ export default function App() {
   const [userName, setUserName]       = useState(() => localStorage.getItem("jrnl_username") || "");
   const [avatarSrc, setAvatarSrc]     = useState(() => localStorage.getItem("jrnl_avatar") || "");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [paperTexture, setPaperTexture] = useState('');
 
   useEffect(() => { localStorage.setItem("jrnl_username", userName); }, [userName]);
   useEffect(() => { localStorage.setItem("jrnl_avatar", avatarSrc); }, [avatarSrc]);
+  useEffect(() => { setPaperTexture(generatePaperTexture()); }, []);
 
   const maxZRef    = useRef(10);
   const fileInputRef = useRef(null);
@@ -1523,10 +1578,12 @@ export default function App() {
         onClick={() => { if (openPanel) setOpenPanel(null); if (profileOpen) setProfileOpen(false); }}
         style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: HEADER_H,
-          backgroundColor: "#EDE8DF",
-          backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)",
-          backgroundSize: "4px 4px",
-          borderBottom: "1px solid #D8D2C8",
+          backgroundColor: "#E8E0D0",
+          backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
+          backgroundRepeat: 'repeat',
+          backgroundSize: '256px 256px',
+          backgroundBlendMode: 'multiply',
+          borderBottom: "1px solid #CFC7B8",
           zIndex: 300,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 20px",
@@ -1593,10 +1650,12 @@ export default function App() {
         style={{
           position: "fixed", left: 0, top: HEADER_H,
           width: SIDEBAR_W, height: `calc(100vh - ${HEADER_H}px)`,
-          backgroundColor: "#EDE8DF",
-          backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)",
-          backgroundSize: "4px 4px",
-          borderRight: "1px solid #D8D2C8",
+          backgroundColor: "#E8E0D0",
+          backgroundImage: paperTexture ? `url(${paperTexture})` : 'none',
+          backgroundRepeat: 'repeat',
+          backgroundSize: '256px 256px',
+          backgroundBlendMode: 'multiply',
+          borderRight: "1px solid #CFC7B8",
           display: "flex", flexDirection: "column",
           zIndex: 200, overflow: "visible",
         }}
@@ -1608,16 +1667,17 @@ export default function App() {
       </aside>
 
       {/* ── PANELS ─────────────────────────────────────────────────────────── */}
-      <CameraPanel  fileInputRef={fileInputRef} onClose={closePanel} open={openPanel === "camera"} />
-      <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} />
+      <CameraPanel  fileInputRef={fileInputRef} onClose={closePanel} open={openPanel === "camera"}   paperTexture={paperTexture} />
+      <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} paperTexture={paperTexture} />
       <TextPanel
         selectedBlock={selectedTextBlock}
         onAddTextBlock={addTextBlock}
         onApplyToSelected={applyToSelected}
         onClose={closePanel}
         open={openPanel === "text"}
+        paperTexture={paperTexture}
       />
-      <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} />
+      <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} paperTexture={paperTexture} />
 
       {/* ── AUTH MODAL ───────────────────────────────────────────────────── */}
       {showAuthModal && (

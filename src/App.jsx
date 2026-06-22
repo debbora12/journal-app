@@ -198,10 +198,17 @@ const STICKER_DEFS = {
   },
 };
 
-const STICKER_CATEGORIES = [
-  { name: "Hearts",       types: ["heart_pink_png"],                  cols: 2 },
-  { name: "Stars",        types: ["star_silver_png", "star_gold_png"], cols: 2 },
-  { name: "Office Goods", types: ["pin_red", "clip_metal"],           cols: 2 },
+const PNG_STICKERS = [
+  { id: 'png-1',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/f5ceee0c-85a5-4a57-aafd-495829b233bf.png' },
+  { id: 'png-2',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/efff2121-b5c0-4ef6-82b5-dd350187d04e.png' },
+  { id: 'png-3',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/e39d01c3-95ef-4cd6-991c-042bdebfde6a.png' },
+  { id: 'png-4',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/dfdbf69c-936a-4de0-97ea-b4d4188b8788.png' },
+  { id: 'png-5',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/dc459b3e-f7ba-4569-9758-78c1b56ce880.png' },
+  { id: 'png-6',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/d60a51f5-8b20-478e-af94-2f2dc0f07cb5.png' },
+  { id: 'png-7',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/d0787db4-e704-4f21-8a58-44b2ecb3befe.png' },
+  { id: 'png-8',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/cb49f39d-99fd-44e7-9535-9f20b89b30bb.png' },
+  { id: 'png-9',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/c869f5f4-72d1-4315-b38c-41205ade9aef.png' },
+  { id: 'png-10', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/a692bc6b-b95e-47a3-99f9-91945d1aad97.png' },
 ];
 
 const PAPERS = [
@@ -218,7 +225,6 @@ const PAPERS = [
 // ── Backgrounds ───────────────────────────────────────────────────────────────
 const BACKGROUNDS = [
   { id: 'cutting-mat', label: 'Cutting Mat', type: 'svg',   color: '#2D5A3D' },
-  { id: 'bg2',         label: 'Background 2', type: 'image', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/backgrounds/Gemini_Generated_Image_yndn21yndn21yndn.png' },
   { id: 'bg3',         label: 'Background 3', type: 'image', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/backgrounds/Gemini_Generated_Image_np18tnnp18tnnp18.png' },
 ];
 
@@ -443,63 +449,51 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
 
 // ── StickerPanel ──────────────────────────────────────────────────────────────
 function StickerPanel({ onAddSticker, onClose, open }) {
-  const [collapsed, setCollapsed] = useState({});
   return (
     <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="stickers" onClose={onClose} />
-      <div style={{ overflowY: "auto", flex: 1 }}>
-        {STICKER_CATEGORIES.map(cat => {
-          const isOpen = !collapsed[cat.name];
-          return (
-            <div key={cat.name}>
-              <div
-                onClick={() => setCollapsed(p => ({ ...p, [cat.name]: !p[cat.name] }))}
-                style={{
-                  padding: "9px 16px",
-                  fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#969287",
-                  textTransform: "uppercase", letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  userSelect: "none", borderBottom: "0.5px solid #CFC7B8",
-                }}
-              >
-                {cat.name}
-                <span style={{ fontSize: 8, color: "#969287" }}>{isOpen ? "▼" : "▶"}</span>
-              </div>
-              {isOpen && (
-                <div style={{
-                  display: "grid", gridTemplateColumns: `repeat(${cat.cols}, 1fr)`,
-                  gap: 6, padding: "8px 12px 12px",
-                }}>
-                  {cat.types.map(type => {
-                    const def = STICKER_DEFS[type];
-                    if (!def) return null;
-                    const ph = 48;
-                    const pw = Math.round((ph * def.vw) / def.vh);
-                    return (
-                      <div
-                        key={type}
-                        onClick={() => onAddSticker(type)}
-                        title={def.label}
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          padding: 8, background: "#E8E3DA", borderRadius: 6,
-                          cursor: "pointer", border: "1px solid #CFC7B8",
-                          transition: "background 0.12s, border-color 0.12s",
-                          minHeight: ph + 16,
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#E5E0D2"; e.currentTarget.style.borderColor = "#C8C2B8"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "#E8E3DA"; e.currentTarget.style.borderColor = "#CFC7B8"; }}
-                      >
-                        {def.render(`prev_${type}`, pw, ph)}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+      <div style={{ overflowY: "auto", flex: 1, padding: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+          {/* PNG stickers */}
+          {PNG_STICKERS.map(p => (
+            <div
+              key={p.id}
+              onClick={() => onAddSticker('png-sticker', p.url)}
+              style={{
+                height: 72, background: "#1C1C1C", borderRadius: 6, padding: 8,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                outline: "1px solid transparent", transition: "background 0.12s, outline 0.12s",
+                boxSizing: "border-box",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
+            >
+              <img src={p.url} alt="" draggable={false}
+                style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }} />
             </div>
-          );
-        })}
+          ))}
+          {/* SVG stickers */}
+          {Object.entries(STICKER_DEFS).map(([type, def]) => {
+            const ph = 56;
+            const pw = Math.round((ph * def.vw) / def.vh);
+            return (
+              <div
+                key={type}
+                onClick={() => onAddSticker(type)}
+                style={{
+                  height: 72, background: "#1C1C1C", borderRadius: 6, padding: 8,
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  outline: "1px solid transparent", transition: "background 0.12s, outline 0.12s",
+                  boxSizing: "border-box",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
+              >
+                {def.render(`prev_${type}`, pw, ph)}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -566,8 +560,13 @@ const RESIZE_CURSORS = { tl: "nw-resize", tr: "ne-resize", bl: "sw-resize", br: 
 
 const StickerElement = memo(function StickerElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete }) {
   const { x, y, width, height, type, zIndex, rotation } = data;
-  const def = STICKER_DEFS[type];
-  if (!def) return null;
+  const isPng = type === 'png-sticker';
+  const def = isPng ? null : STICKER_DEFS[type];
+  if (!isPng && !def) return null;
+  const content = isPng
+    ? <img src={data.url} alt="" draggable={false} decoding="async"
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }} />
+    : def.render(data.id, width, height);
   return (
     <div
       data-id={data.id}
@@ -580,7 +579,7 @@ const StickerElement = memo(function StickerElement({ data, isSelected, onMouseD
       }}
       onMouseDown={onMouseDownDrag}
     >
-      {def.render(data.id, width, height)}
+      {content}
       {isSelected && (
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
@@ -1578,13 +1577,21 @@ export default function App() {
   const deleteTextBlock = (key, id) => { mutatePage(key, p => ({...p, textBlocks: (p.textBlocks||[]).filter(x=>x.id!==id)})); setSelectedId(null); };
   const changeTextBlock = (key, id, ch) => { mutatePage(key, p => ({...p, textBlocks: (p.textBlocks||[]).map(x=>x.id===id?{...x,...ch}:x)})); };
   const applyToSelected = (ch) => { if (!selInfo || selInfo.type !== "text") return; changeTextBlock(selInfo.key, selectedId, ch); };
-  const addSticker = (type) => {
-    const def = STICKER_DEFS[type]; if (!def) return;
-    const W = def.defaultW, H = Math.round(W * def.vh / def.vw);
+  const addSticker = (type, url = null) => {
+    let W, H;
+    if (type === 'png-sticker') {
+      W = 100; H = 100;
+    } else {
+      const def = STICKER_DEFS[type]; if (!def) return;
+      W = def.defaultW; H = Math.round(W * def.vh / def.vw);
+    }
     maxZRef.current += 1;
-    const stk = { id: `stk_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, type,
+    const stk = {
+      id: `stk_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      type, ...(url ? { url } : {}),
       x: Math.round((PAGE_W-W)/2), y: Math.round((PAGE_H-H)/2),
-      width: W, height: H, rotation: 0, zIndex: maxZRef.current };
+      width: W, height: H, rotation: 0, zIndex: maxZRef.current,
+    };
     mutatePage(rightKey, p => ({...p, stickers: [...(p.stickers||[]), stk]}));
     setSelectedId(stk.id);
   };

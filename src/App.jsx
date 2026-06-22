@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
 import logo from "./assets/logo.svg";
@@ -564,17 +564,19 @@ function RotationHandle({ onMouseDown }) {
 // ── StickerElement ────────────────────────────────────────────────────────────
 const RESIZE_CURSORS = { tl: "nw-resize", tr: "ne-resize", bl: "sw-resize", br: "se-resize" };
 
-function StickerElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete }) {
+const StickerElement = memo(function StickerElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete }) {
   const { x, y, width, height, type, zIndex, rotation } = data;
   const def = STICKER_DEFS[type];
   if (!def) return null;
   return (
     <div
+      data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, width, height, zIndex,
         cursor: "grab", transform: `rotate(${rotation ?? 0}deg)`, transformOrigin: "center center",
         outline: isSelected ? "1px dashed #888888" : "none", outlineOffset: 3,
         userSelect: "none", lineHeight: 0,
+        willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={onMouseDownDrag}
     >
@@ -597,22 +599,24 @@ function StickerElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, 
       )}
     </div>
   );
-}
+});
 
 // ── PaperElement ──────────────────────────────────────────────────────────────
-function PaperElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete }) {
+const PaperElement = memo(function PaperElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete }) {
   const { x, y, width, height, url, rotation, zIndex } = data;
   return (
     <div
+      data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, width, height, zIndex,
         cursor: "grab", transform: `rotate(${rotation ?? 0}deg)`, transformOrigin: "center center",
         outline: isSelected ? "1px dashed #888888" : "none", outlineOffset: 3, userSelect: "none",
+        willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={onMouseDownDrag}
     >
       <div style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: 2 }}>
-        <img src={url} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }} />
+        <img src={url} alt="" draggable={false} decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }} />
       </div>
       {isSelected && (
         <>
@@ -632,15 +636,16 @@ function PaperElement({ data, isSelected, onMouseDownDrag, onMouseDownResize, on
       )}
     </div>
   );
-}
+});
 
 // ── Polaroid ──────────────────────────────────────────────────────────────────
-function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete, onCaptionChange }) {
+const Polaroid = memo(function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMouseDownRotate, onDelete, onCaptionChange }) {
   const { x, y, width, rotation, caption, src, zIndex } = data;
   const h = polH(width);
   const photoSize = width - 16;
   return (
     <div
+      data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, width, height: h,
         background: "#FFFFFF", padding: "8px 8px 28px 8px",
@@ -649,10 +654,11 @@ function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMous
         zIndex, cursor: "grab",
         outline: isSelected ? "1.5px dashed #888888" : "none",
         outlineOffset: 3, userSelect: "none", boxSizing: "border-box",
+        willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={onMouseDownDrag}
     >
-      <img src={src} alt="" draggable={false} style={{ width: photoSize, height: photoSize, objectFit: "cover", display: "block", pointerEvents: "none" }} />
+      <img src={src} alt="" draggable={false} decoding="async" style={{ width: photoSize, height: photoSize, objectFit: "cover", display: "block", pointerEvents: "none" }} />
       <input
         type="text" value={caption} placeholder="legenda..."
         onChange={e => onCaptionChange(e.target.value)}
@@ -683,10 +689,10 @@ function Polaroid({ data, isSelected, onMouseDownDrag, onMouseDownResize, onMous
       )}
     </div>
   );
-}
+});
 
 // ── TextBlock ─────────────────────────────────────────────────────────────────
-function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate }) {
+const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate }) {
   const { x, y, text, fontFamily, fontSize, color, zIndex, rotation } = data;
   const textareaRef = useRef(null);
   const mirrorRef   = useRef(null);
@@ -719,6 +725,7 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
         transformOrigin: "center center",
         outline: isSelected ? "1px dashed #888888" : "none",
         outlineOffset: 3, userSelect: "none",
+        willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={onMouseDownDrag}
     >
@@ -770,10 +777,10 @@ function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTe
       )}
     </div>
   );
-}
+});
 
 // ── JournalPage ───────────────────────────────────────────────────────────────
-function JournalPage({
+const JournalPage = memo(function JournalPage({
   date, side,
   polaroids, textBlocks, stickers, papers, selectedId,
   onSelectId,
@@ -795,7 +802,8 @@ function JournalPage({
     dragRef.current = { type: "polaroid", id: pol.id, dkey: dateKey,
       pageLeft: rect.left, pageTop: rect.top,
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
-      mouseOffsetX: e.clientX - rect.left - pol.x, mouseOffsetY: e.clientY - rect.top - pol.y };
+      mouseOffsetX: e.clientX - rect.left - pol.x, mouseOffsetY: e.clientY - rect.top - pol.y,
+      dims: { w: pol.width, h: polH(pol.width) } };
     onSelectId(pol.id);
   };
   const handlePolResizeStart = (pol, e, corner) => {
@@ -818,7 +826,8 @@ function JournalPage({
       pageLeft: rect.left, pageTop: rect.top,
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
       mouseOffsetX: e.clientX - rect.left - blk.x, mouseOffsetY: e.clientY - rect.top - blk.y,
-      startClientX: e.clientX, startClientY: e.clientY }; // threshold: só move se arrastou >4px
+      startClientX: e.clientX, startClientY: e.clientY, // threshold: só move se arrastou >4px
+      dims: { w: blk.width, h: 20 } };
     onSelectId(blk.id);
   };
   const handleTextResizeStart = (blk, e, corner) => {
@@ -846,7 +855,8 @@ function JournalPage({
     dragRef.current = { type: "sticker", id: stk.id, dkey: dateKey,
       pageLeft: rect.left, pageTop: rect.top,
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
-      mouseOffsetX: e.clientX - rect.left - stk.x, mouseOffsetY: e.clientY - rect.top - stk.y };
+      mouseOffsetX: e.clientX - rect.left - stk.x, mouseOffsetY: e.clientY - rect.top - stk.y,
+      dims: { w: stk.width, h: stk.height } };
     onSelectId(stk.id);
   };
   const handleStickerResizeStart = (stk, e, corner) => {
@@ -868,7 +878,8 @@ function JournalPage({
     dragRef.current = { type: "paper", id: pap.id, dkey: dateKey,
       pageLeft: rect.left, pageTop: rect.top,
       siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
-      mouseOffsetX: e.clientX - rect.left - pap.x, mouseOffsetY: e.clientY - rect.top - pap.y };
+      mouseOffsetX: e.clientX - rect.left - pap.x, mouseOffsetY: e.clientY - rect.top - pap.y,
+      dims: { w: pap.width, h: pap.height } };
     onSelectId(pap.id);
   };
   const handlePaperResizeStart = (pap, e, corner) => {
@@ -947,7 +958,7 @@ function JournalPage({
       ))}
     </div>
   );
-}
+});
 
 // ── ProfileDropdown ───────────────────────────────────────────────────────────
 function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onNavigate, onClose, todayRef, onSignOut }) {
@@ -1203,11 +1214,12 @@ export default function App() {
   useEffect(() => { localStorage.setItem("jrnl_avatar", avatarSrc); }, [avatarSrc]);
   useEffect(() => { localStorage.setItem("journal_background", activeBg); }, [activeBg]);
 
-  const maxZRef    = useRef(10);
+  const maxZRef      = useRef(10);
   const fileInputRef = useRef(null);
-  const dragRef    = useRef(null);
-  const resizeRef  = useRef(null);
-  const rotateRef  = useRef(null);
+  const dragRef      = useRef(null);
+  const resizeRef    = useRef(null);
+  const rotateRef    = useRef(null);
+  const isDraggingRef = useRef(false);
 
   const rightDate = addDays(today, offset);
   const leftDate  = addDays(today, offset - 1);
@@ -1231,12 +1243,13 @@ export default function App() {
   useEffect(() => {
     if (!Object.keys(pageData).length) return;
     const tid = setTimeout(async () => {
+      if (isDraggingRef.current) return;
       await Promise.all(
         Object.entries(pageData).map(([key, data]) => savePageRemote(key, data, user?.id))
       );
       const now = new Date();
       setLastSave(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
-    }, 600);
+    }, 800);
     return () => clearTimeout(tid);
   }, [pageData, user?.id]);
 
@@ -1283,85 +1296,92 @@ export default function App() {
   useEffect(() => {
     const onMove = (e) => {
       if (dragRef.current) {
+        isDraggingRef.current = true;
         const { type, id, dkey, pageLeft, pageTop, mouseOffsetX, mouseOffsetY,
-                siblingKey, siblingPageLeft, siblingPageTop } = dragRef.current;
+                siblingKey, siblingPageLeft, siblingPageTop, dims } = dragRef.current;
         const inSibling = siblingKey != null &&
           e.clientX >= siblingPageLeft && e.clientX < siblingPageLeft + PAGE_W;
-        const tgtKey  = inSibling ? siblingKey    : dkey;
-        const tgtLeft = inSibling ? siblingPageLeft : pageLeft;
-        const tgtTop  = inSibling ? siblingPageTop  : pageTop;
 
-        if (type === "polaroid") {
-          setPageData(prev => {
-            const srcPage = prev[dkey]; if (!srcPage) return prev;
-            const pol = (srcPage.polaroids || []).find(p => p.id === id); if (!pol) return prev;
-            const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - pol.width);
-            const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - polH(pol.width));
-            if (!inSibling) {
-              if (pol.x === newX && pol.y === newY) return prev;
-              return { ...prev, [dkey]: { ...srcPage, polaroids: srcPage.polaroids.map(p => p.id===id?{...p,x:newX,y:newY}:p) } };
-            }
-            const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
-            return { ...prev, [dkey]: { ...srcPage, polaroids: srcPage.polaroids.filter(p=>p.id!==id) },
-              [tgtKey]: { ...tgtPage, polaroids: [...(tgtPage.polaroids||[]).filter(p=>p.id!==id), {...pol,x:newX,y:newY}] } };
-          });
-        }
-        if (type === "text") {
-          // Threshold de 4px: evita mover ao simplesmente clicar no textarea
-          const { startClientX, startClientY } = dragRef.current;
-          if (Math.abs(e.clientX - startClientX) + Math.abs(e.clientY - startClientY) < 4) return;
-          setPageData(prev => {
-            const srcPage = prev[dkey]; if (!srcPage) return prev;
-            const blk = (srcPage.textBlocks || []).find(b => b.id === id); if (!blk) return prev;
-            const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - blk.width);
-            const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - 20);
-            if (!inSibling) {
-              if (blk.x === newX && blk.y === newY) return prev;
-              return { ...prev, [dkey]: { ...srcPage, textBlocks: srcPage.textBlocks.map(b => b.id===id?{...b,x:newX,y:newY}:b) } };
-            }
-            const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
-            return { ...prev, [dkey]: { ...srcPage, textBlocks: srcPage.textBlocks.filter(b=>b.id!==id) },
-              [tgtKey]: { ...tgtPage, textBlocks: [...(tgtPage.textBlocks||[]).filter(b=>b.id!==id), {...blk,x:newX,y:newY}] } };
-          });
-        }
-        if (type === "sticker") {
-          setPageData(prev => {
-            const srcPage = prev[dkey]; if (!srcPage) return prev;
-            const stk = (srcPage.stickers || []).find(s => s.id === id); if (!stk) return prev;
-            const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - stk.width);
-            const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - stk.height);
-            if (!inSibling) {
-              if (stk.x === newX && stk.y === newY) return prev;
-              return { ...prev, [dkey]: { ...srcPage, stickers: srcPage.stickers.map(s => s.id===id?{...s,x:newX,y:newY}:s) } };
-            }
-            const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
-            return { ...prev, [dkey]: { ...srcPage, stickers: srcPage.stickers.filter(s=>s.id!==id) },
-              [tgtKey]: { ...tgtPage, stickers: [...(tgtPage.stickers||[]).filter(s=>s.id!==id), {...stk,x:newX,y:newY}] } };
-          });
-        }
-        if (type === "paper") {
-          setPageData(prev => {
-            const srcPage = prev[dkey]; if (!srcPage) return prev;
-            const pap = (srcPage.papers || []).find(p => p.id === id); if (!pap) return prev;
-            const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - pap.width);
-            const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - pap.height);
-            if (!inSibling) {
-              if (pap.x === newX && pap.y === newY) return prev;
-              return { ...prev, [dkey]: { ...srcPage, papers: srcPage.papers.map(p => p.id===id?{...p,x:newX,y:newY}:p) } };
-            }
-            const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
-            return { ...prev, [dkey]: { ...srcPage, papers: srcPage.papers.filter(p=>p.id!==id) },
-              [tgtKey]: { ...tgtPage, papers: [...(tgtPage.papers||[]).filter(p=>p.id!==id), {...pap,x:newX,y:newY}] } };
-          });
-        }
         if (inSibling) {
+          // Cross-page transfer: must use setPageData (structural move between arrays)
+          const tgtKey  = siblingKey;
+          const tgtLeft = siblingPageLeft;
+          const tgtTop  = siblingPageTop;
+          if (type === "polaroid") {
+            setPageData(prev => {
+              const srcPage = prev[dkey]; if (!srcPage) return prev;
+              const pol = (srcPage.polaroids || []).find(p => p.id === id); if (!pol) return prev;
+              const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - pol.width);
+              const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - polH(pol.width));
+              const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
+              return { ...prev, [dkey]: { ...srcPage, polaroids: srcPage.polaroids.filter(p=>p.id!==id) },
+                [tgtKey]: { ...tgtPage, polaroids: [...(tgtPage.polaroids||[]).filter(p=>p.id!==id), {...pol,x:newX,y:newY}] } };
+            });
+          }
+          if (type === "text") {
+            const { startClientX, startClientY } = dragRef.current;
+            if (Math.abs(e.clientX - startClientX) + Math.abs(e.clientY - startClientY) < 4) return;
+            setPageData(prev => {
+              const srcPage = prev[dkey]; if (!srcPage) return prev;
+              const blk = (srcPage.textBlocks || []).find(b => b.id === id); if (!blk) return prev;
+              const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - blk.width);
+              const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - 20);
+              const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
+              return { ...prev, [dkey]: { ...srcPage, textBlocks: srcPage.textBlocks.filter(b=>b.id!==id) },
+                [tgtKey]: { ...tgtPage, textBlocks: [...(tgtPage.textBlocks||[]).filter(b=>b.id!==id), {...blk,x:newX,y:newY}] } };
+            });
+          }
+          if (type === "sticker") {
+            setPageData(prev => {
+              const srcPage = prev[dkey]; if (!srcPage) return prev;
+              const stk = (srcPage.stickers || []).find(s => s.id === id); if (!stk) return prev;
+              const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - stk.width);
+              const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - stk.height);
+              const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
+              return { ...prev, [dkey]: { ...srcPage, stickers: srcPage.stickers.filter(s=>s.id!==id) },
+                [tgtKey]: { ...tgtPage, stickers: [...(tgtPage.stickers||[]).filter(s=>s.id!==id), {...stk,x:newX,y:newY}] } };
+            });
+          }
+          if (type === "paper") {
+            setPageData(prev => {
+              const srcPage = prev[dkey]; if (!srcPage) return prev;
+              const pap = (srcPage.papers || []).find(p => p.id === id); if (!pap) return prev;
+              const newX = clamp(e.clientX - tgtLeft - mouseOffsetX, 0, PAGE_W - pap.width);
+              const newY = clamp(e.clientY - tgtTop  - mouseOffsetY, 0, PAGE_H - pap.height);
+              const tgtPage = prev[tgtKey] || { polaroids:[], textBlocks:[], stickers:[], papers:[] };
+              return { ...prev, [dkey]: { ...srcPage, papers: srcPage.papers.filter(p=>p.id!==id) },
+                [tgtKey]: { ...tgtPage, papers: [...(tgtPage.papers||[]).filter(p=>p.id!==id), {...pap,x:newX,y:newY}] } };
+            });
+          }
+          // Swap page context; clear pending DOM-final position
           dragRef.current = { ...dragRef.current,
             dkey: siblingKey, pageLeft: siblingPageLeft, pageTop: siblingPageTop,
-            siblingKey: dkey, siblingPageLeft: pageLeft, siblingPageTop: pageTop };
+            siblingKey: dkey, siblingPageLeft: pageLeft, siblingPageTop: pageTop,
+            finalX: null, finalY: null };
+        } else {
+          // Within-page drag: mutate DOM directly, defer setPageData to mouseup
+          if (type === "text") {
+            const { startClientX, startClientY } = dragRef.current;
+            if (Math.abs(e.clientX - startClientX) + Math.abs(e.clientY - startClientY) < 4) return;
+          }
+          const dW = dims?.w ?? 80;
+          const dH = dims?.h ?? 80;
+          const newX = clamp(e.clientX - pageLeft - mouseOffsetX, 0, PAGE_W - dW);
+          const newY = type === "text"
+            ? clamp(e.clientY - pageTop - mouseOffsetY, 0, PAGE_H - 20)
+            : clamp(e.clientY - pageTop - mouseOffsetY, 0, PAGE_H - dH);
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) {
+            el.style.left = newX + 'px';
+            el.style.top  = newY + 'px';
+          }
+          dragRef.current.finalX = newX;
+          dragRef.current.finalY = newY;
         }
       }
 
       if (resizeRef.current) {
+        isDraggingRef.current = true;
         const { type, id, dkey, corner, startX, startY, startW, startPX, startPY } = resizeRef.current;
         const dx = e.clientX - startX;
         const dy = startY != null ? e.clientY - startY : 0;
@@ -1370,48 +1390,62 @@ export default function App() {
           const rot = resizeRef.current.rotation ?? 0;
           const rad = rot * Math.PI / 180;
           const localDX = dx * Math.cos(rad) + dy * Math.sin(rad);
-          setPageData(prev => {
-            const page = prev[dkey]; if (!page) return prev;
-            let newW, newX, newY;
-            if (corner === "br")      { newW = clamp(startW + localDX, 80, 320); newX = startPX; newY = startPY; }
-            else if (corner === "bl") { newW = clamp(startW - localDX, 80, 320); newX = startPX + startW - newW; newY = startPY; }
-            else if (corner === "tr") { newW = clamp(startW + localDX, 80, 320); newX = startPX; newY = startPY + startW - newW; }
-            else                      { newW = clamp(startW - localDX, 80, 320); newX = startPX + startW - newW; newY = startPY + startW - newW; }
-            newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - polH(newW));
-            return { ...prev, [dkey]: { ...page, polaroids: page.polaroids.map(p => p.id===id?{...p,width:newW,x:newX,y:newY}:p) } };
-          });
+          let newW, newX, newY;
+          if (corner === "br")      { newW = clamp(startW + localDX, 80, 320); newX = startPX; newY = startPY; }
+          else if (corner === "bl") { newW = clamp(startW - localDX, 80, 320); newX = startPX + startW - newW; newY = startPY; }
+          else if (corner === "tr") { newW = clamp(startW + localDX, 80, 320); newX = startPX; newY = startPY + startW - newW; }
+          else                      { newW = clamp(startW - localDX, 80, 320); newX = startPX + startW - newW; newY = startPY + startW - newW; }
+          newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - polH(newW));
+          const newH = polH(newW);
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) {
+            el.style.width = newW + 'px'; el.style.height = newH + 'px';
+            el.style.left  = newX + 'px'; el.style.top   = newY + 'px';
+            const img = el.querySelector('img');
+            if (img) { img.style.width = (newW - 16) + 'px'; img.style.height = (newW - 16) + 'px'; }
+          }
+          resizeRef.current.finalW = newW; resizeRef.current.finalH = newH;
+          resizeRef.current.finalX = newX; resizeRef.current.finalY = newY;
         }
         if (type === "sticker") {
           const { startH, aspect, rotation: rot = 0 } = resizeRef.current;
           const rad = rot * Math.PI / 180;
           const localDX = dx * Math.cos(rad) + dy * Math.sin(rad);
-          setPageData(prev => {
-            const page = prev[dkey]; if (!page) return prev;
-            let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
-            newW = clamp(newW, 40, 300);
-            const newH = newW / aspect;
-            let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
-            let newY = (corner === "tr" || corner === "tl") ? startPY + startH - newH : startPY;
-            newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - newH);
-            return { ...prev, [dkey]: { ...page, stickers: page.stickers.map(s => s.id===id?{...s,width:newW,height:newH,x:newX,y:newY}:s) } };
-          });
+          let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
+          newW = clamp(newW, 40, 300);
+          const newH = newW / aspect;
+          let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
+          let newY = (corner === "tr" || corner === "tl") ? startPY + startH - newH : startPY;
+          newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - newH);
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) {
+            el.style.width = newW + 'px'; el.style.height = newH + 'px';
+            el.style.left  = newX + 'px'; el.style.top   = newY + 'px';
+            const img = el.querySelector('img');
+            if (img) { img.style.width = newW + 'px'; img.style.height = newH + 'px'; }
+          }
+          resizeRef.current.finalW = newW; resizeRef.current.finalH = newH;
+          resizeRef.current.finalX = newX; resizeRef.current.finalY = newY;
         }
         if (type === "paper") {
           const { startH, aspect, rotation: rot = 0 } = resizeRef.current;
           const rad = rot * Math.PI / 180;
           const localDX = dx * Math.cos(rad) + dy * Math.sin(rad);
-          setPageData(prev => {
-            const page = prev[dkey]; if (!page) return prev;
-            let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
-            newW = clamp(newW, 40, 400);
-            const newH = newW / aspect;
-            let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
-            let newY = (corner === "tr" || corner === "tl") ? startPY + startH - newH : startPY;
-            newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - newH);
-            return { ...prev, [dkey]: { ...page, papers: (page.papers||[]).map(p => p.id===id?{...p,width:newW,height:newH,x:newX,y:newY}:p) } };
-          });
+          let newW = (corner === "bl" || corner === "tl") ? startW - localDX : startW + localDX;
+          newW = clamp(newW, 40, 400);
+          const newH = newW / aspect;
+          let newX = (corner === "bl" || corner === "tl") ? startPX + startW - newW : startPX;
+          let newY = (corner === "tr" || corner === "tl") ? startPY + startH - newH : startPY;
+          newX = clamp(newX, 0, PAGE_W - newW); newY = clamp(newY, 0, PAGE_H - newH);
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) {
+            el.style.width = newW + 'px'; el.style.height = newH + 'px';
+            el.style.left  = newX + 'px'; el.style.top   = newY + 'px';
+          }
+          resizeRef.current.finalW = newW; resizeRef.current.finalH = newH;
+          resizeRef.current.finalX = newX; resizeRef.current.finalY = newY;
         }
-        // Texto: resize escala fontSize proporcionalmente (como sticker), largura acompanha
+        // Texto: resize escala fontSize — requires re-render for textarea auto-height
         if (type === "text") {
           const { rotation: rot = 0, startFontSize = 16 } = resizeRef.current;
           const rad = rot * Math.PI / 180;
@@ -1430,22 +1464,60 @@ export default function App() {
       }
 
       if (rotateRef.current) {
-        const { type, id, dkey, centerX, centerY } = rotateRef.current;
+        isDraggingRef.current = true;
+        const { id, centerX, centerY } = rotateRef.current;
         const newAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
+        const el = document.querySelector(`[data-id="${id}"]`);
+        if (el) el.style.transform = `rotate(${newAngle}deg)`;
+        rotateRef.current.finalAngle = newAngle;
+      }
+    };
+
+    const onUp = () => {
+      document.body.style.userSelect = "";
+      isDraggingRef.current = false;
+
+      // Commit drag final position to React state (one update instead of per-pixel)
+      if (dragRef.current?.finalX != null) {
+        const { type, id, dkey, finalX, finalY } = dragRef.current;
         setPageData(prev => {
           const page = prev[dkey]; if (!page) return prev;
-          if (type === "polaroid") return { ...prev, [dkey]: { ...page, polaroids: page.polaroids.map(p => p.id===id?{...p,rotation:newAngle}:p) } };
-          if (type === "sticker")  return { ...prev, [dkey]: { ...page, stickers:  page.stickers.map(s  => s.id===id?{...s,rotation:newAngle}:s) } };
-          if (type === "paper")    return { ...prev, [dkey]: { ...page, papers:    (page.papers||[]).map(p => p.id===id?{...p,rotation:newAngle}:p) } };
-          if (type === "text")     return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id?{...b,rotation:newAngle}:b) } };
+          if (type === "polaroid") return { ...prev, [dkey]: { ...page, polaroids:  page.polaroids.map(p  => p.id===id ? {...p,  x:finalX, y:finalY} : p)  } };
+          if (type === "text")     return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id ? {...b,  x:finalX, y:finalY} : b)  } };
+          if (type === "sticker")  return { ...prev, [dkey]: { ...page, stickers:   page.stickers.map(s   => s.id===id ? {...s,  x:finalX, y:finalY} : s)  } };
+          if (type === "paper")    return { ...prev, [dkey]: { ...page, papers:     (page.papers||[]).map(p => p.id===id ? {...p, x:finalX, y:finalY} : p)  } };
           return prev;
         });
       }
-    };
-    const onUp = () => {
-      document.body.style.userSelect = "";
+
+      // Commit resize final dimensions to React state
+      if (resizeRef.current?.finalW != null) {
+        const { type, id, dkey, finalW, finalH, finalX, finalY } = resizeRef.current;
+        setPageData(prev => {
+          const page = prev[dkey]; if (!page) return prev;
+          if (type === "polaroid") return { ...prev, [dkey]: { ...page, polaroids: page.polaroids.map(p => p.id===id ? {...p, width:finalW, x:finalX, y:finalY} : p) } };
+          if (type === "sticker")  return { ...prev, [dkey]: { ...page, stickers:  page.stickers.map(s  => s.id===id ? {...s, width:finalW, height:finalH, x:finalX, y:finalY} : s) } };
+          if (type === "paper")    return { ...prev, [dkey]: { ...page, papers:    (page.papers||[]).map(p => p.id===id ? {...p, width:finalW, height:finalH, x:finalX, y:finalY} : p) } };
+          return prev;
+        });
+      }
+
+      // Commit rotation final angle to React state
+      if (rotateRef.current?.finalAngle != null) {
+        const { type, id, dkey, finalAngle } = rotateRef.current;
+        setPageData(prev => {
+          const page = prev[dkey]; if (!page) return prev;
+          if (type === "polaroid") return { ...prev, [dkey]: { ...page, polaroids:  page.polaroids.map(p  => p.id===id ? {...p, rotation:finalAngle} : p)  } };
+          if (type === "sticker")  return { ...prev, [dkey]: { ...page, stickers:   page.stickers.map(s   => s.id===id ? {...s, rotation:finalAngle} : s)  } };
+          if (type === "paper")    return { ...prev, [dkey]: { ...page, papers:     (page.papers||[]).map(p => p.id===id ? {...p, rotation:finalAngle} : p)  } };
+          if (type === "text")     return { ...prev, [dkey]: { ...page, textBlocks: page.textBlocks.map(b => b.id===id ? {...b, rotation:finalAngle} : b)  } };
+          return prev;
+        });
+      }
+
       dragRef.current = null; resizeRef.current = null; rotateRef.current = null;
     };
+
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
@@ -1784,6 +1856,8 @@ export default function App() {
             src={COVER_URL}
             alt=""
             draggable={false}
+            loading="eager"
+            fetchpriority="high"
             style={{
               position: "absolute", top: 0, left: 0,
               width: "100%", height: "100%",

@@ -7,4 +7,14 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.PORT || "5173"),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+        },
+      },
+    },
+  },
 })

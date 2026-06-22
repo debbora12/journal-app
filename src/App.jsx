@@ -215,6 +215,13 @@ const PAPERS = [
   { key: "paper46", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2046.png" },
 ];
 
+// ── Backgrounds ───────────────────────────────────────────────────────────────
+const BACKGROUNDS = [
+  { id: 'cutting-mat', label: 'Cutting Mat', type: 'svg',   color: '#2D5A3D' },
+  { id: 'bg2',         label: 'Background 2', type: 'image', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/backgrounds/Gemini_Generated_Image_yndn21yndn21yndn.png' },
+  { id: 'bg3',         label: 'Background 3', type: 'image', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/backgrounds/Gemini_Generated_Image_np18tnnp18tnnp18.png' },
+];
+
 // ── SidebarIcon ───────────────────────────────────────────────────────────────
 const UI_FONT = "'Futura', 'Jost', 'Nunito', sans-serif";
 
@@ -1071,6 +1078,72 @@ function ProfileDropdown({ userName, setUserName, avatarSrc, onAvatarChange, onN
   );
 }
 
+// ── BgDot / BgDots ────────────────────────────────────────────────────────────
+function BgDot({ color, isActive, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        width: 12, height: 12, borderRadius: "50%",
+        background: color,
+        opacity: hov ? 0.8 : isActive ? 1 : 0.5,
+        border: isActive ? "2px solid #FFFFFF" : "2px solid transparent",
+        boxShadow: isActive ? "0 0 0 1px rgba(0,0,0,0.3)" : "none",
+        cursor: "pointer",
+        transform: hov ? "scale(1.15)" : "scale(1)",
+        transition: "opacity 0.15s, transform 0.15s",
+        boxSizing: "border-box", flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function BgDots({ activeBg, onSelect }) {
+  const [dotColors, setDotColors] = useState({});
+
+  useEffect(() => {
+    BACKGROUNDS.forEach(bg => {
+      if (bg.type !== "image") return;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 1; canvas.height = 1;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, 1, 1);
+          const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+          setDotColors(prev => ({ ...prev, [bg.id]: `rgb(${r},${g},${b})` }));
+        } catch {
+          setDotColors(prev => ({ ...prev, [bg.id]: "#888888" }));
+        }
+      };
+      img.onerror = () => setDotColors(prev => ({ ...prev, [bg.id]: "#888888" }));
+      img.src = bg.url;
+    });
+  }, []);
+
+  return (
+    <div style={{
+      position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)",
+      zIndex: 50, display: "flex", gap: 10, alignItems: "center",
+      pointerEvents: "auto",
+    }}>
+      {BACKGROUNDS.map(bg => (
+        <BgDot
+          key={bg.id}
+          color={bg.type === "svg" ? bg.color : (dotColors[bg.id] || "#888888")}
+          isActive={activeBg === bg.id}
+          onClick={() => onSelect(bg.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
@@ -1124,9 +1197,11 @@ export default function App() {
   const [userName, setUserName]       = useState(() => localStorage.getItem("jrnl_username") || "");
   const [avatarSrc, setAvatarSrc]     = useState(() => localStorage.getItem("jrnl_avatar") || "");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [activeBg, setActiveBg]       = useState(() => localStorage.getItem("journal_background") || "cutting-mat");
 
   useEffect(() => { localStorage.setItem("jrnl_username", userName); }, [userName]);
   useEffect(() => { localStorage.setItem("jrnl_avatar", avatarSrc); }, [avatarSrc]);
+  useEffect(() => { localStorage.setItem("journal_background", activeBg); }, [activeBg]);
 
   const maxZRef    = useRef(10);
   const fileInputRef = useRef(null);
@@ -1491,6 +1566,10 @@ export default function App() {
   // ── Avatar inline ─────────────────────────────────────────────────────────
   const avatarInitial = userName ? userName[0].toUpperCase() : "?";
 
+  // ── Background helper ──────────────────────────────────────────────────────
+  const isMat  = activeBg === "cutting-mat";
+  const bgDef  = BACKGROUNDS.find(b => b.id === activeBg);
+
   // Loading inicial mínimo (só enquanto verifica sessão)
   if (authLoading) return (
     <div style={{ width:"100vw", height:"100vh", background:"#2D5A3D", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -1628,23 +1707,25 @@ export default function App() {
         />
       )}
 
-      {/* ── MAIN JOURNAL AREA (cutting mat) ──────────────────────────────── */}
+      {/* ── MAIN JOURNAL AREA ────────────────────────────────────────────── */}
       <main
         onClick={() => { if (openPanel) setOpenPanel(null); if (profileOpen) setProfileOpen(false); }}
         style={{
           position: "fixed", left: SIDEBAR_W, top: HEADER_H,
           width: `calc(100vw - ${SIDEBAR_W}px)`,
           height: `calc(100vh - ${HEADER_H}px)`,
-          backgroundColor: "#2D5A3D",
-          backgroundImage: MAT_GRID,
-          backgroundSize: "50px 50px",
+          backgroundColor: isMat ? "#2D5A3D" : undefined,
+          backgroundImage: isMat ? MAT_GRID : bgDef?.type === "image" ? `url(${bgDef.url})` : undefined,
+          backgroundSize: isMat ? "50px 50px" : "cover",
+          backgroundPosition: isMat ? undefined : "center",
+          backgroundRepeat: isMat ? undefined : "no-repeat",
           display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden",
           minWidth: 1200 - SIDEBAR_W,
         }}
       >
-        {/* Ruler — top strip */}
-        <div style={{
+        {/* Ruler — top strip (cutting mat only) */}
+        {isMat && <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 14,
           background: "#265235",
           backgroundImage: [
@@ -1652,9 +1733,9 @@ export default function App() {
             "repeating-linear-gradient(90deg, transparent 0, transparent 49px, rgba(74,144,96,0.9) 49px, rgba(74,144,96,0.9) 50px)",
           ].join(", "),
           zIndex: 10, pointerEvents: "none",
-        }} />
-        {/* Ruler — left strip */}
-        <div style={{
+        }} />}
+        {/* Ruler — left strip (cutting mat only) */}
+        {isMat && <div style={{
           position: "absolute", top: 0, left: 0, bottom: 0, width: 14,
           background: "#265235",
           backgroundImage: [
@@ -1662,10 +1743,10 @@ export default function App() {
             "repeating-linear-gradient(0deg, transparent 0, transparent 49px, rgba(74,144,96,0.9) 49px, rgba(74,144,96,0.9) 50px)",
           ].join(", "),
           zIndex: 10, pointerEvents: "none",
-        }} />
+        }} />}
 
-        {/* Watermark */}
-        <div style={{
+        {/* Watermark (cutting mat only) */}
+        {isMat && <div style={{
           position: "absolute", bottom: 18, left: 24,
           fontFamily: UI_FONT, fontSize: 9, fontWeight: 400,
           color: "#3D7A52", opacity: 0.7, letterSpacing: "0.12em",
@@ -1673,7 +1754,10 @@ export default function App() {
           zIndex: 5,
         }}>
           SDI® Cutting Mat 30×22cm A4
-        </div>
+        </div>}
+
+        {/* Background selector dots */}
+        <BgDots activeBg={activeBg} onSelect={setActiveBg} />
 
         {/* Nav arrow left */}
         <div style={{ position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)", zIndex: 20 }}>
@@ -1758,3 +1842,4 @@ export default function App() {
     </>
   );
 }
+

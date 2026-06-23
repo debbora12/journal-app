@@ -212,6 +212,7 @@ const PNG_STICKERS = [
 
 const DATE_STICKERS = [
   { id: 'date-jan',       url: '/stickers/dates/jan.webp' },
+  { id: 'date-february',  url: '/stickers/dates/february.webp' },
   { id: 'date-march',     url: '/stickers/dates/march.webp' },
   { id: 'date-april',     url: '/stickers/dates/april.webp' },
   { id: 'date-may',       url: '/stickers/dates/may.webp' },

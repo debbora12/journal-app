@@ -48,7 +48,7 @@ const TEXT_SIZES = [
   { label: "XL", value: 30 },
 ];
 
-const TOOLBAR_COLORS = ["#1A1A1A","#FFFFFF","#C0392B","#E91E8C","#8E44AD","#2980B9"];
+const TOOLBAR_COLORS = ["#323232","#004DFF","#FF0909","#FC20B6","#0C9500","#FF6A07"];
 
 const FONT_SHORT = {
   "'Caveat', cursive":                 "Caveat",
@@ -891,7 +891,7 @@ const Polaroid = memo(function Polaroid({ data, isSelected, onMouseDownDrag, onM
 // ── TextBlock ─────────────────────────────────────────────────────────────────
 const TextBlock = memo(function TextBlock({
   data, isSelected,
-  onMouseDownDrag, onMouseDownResize, onMouseDownRotate,
+  onMouseDownDrag, onMouseDownResize,
   onSelect, onDelete, onTextChange,
 }) {
   const { x, y, width, text, fontFamily, fontSize, color, zIndex, rotation } = data;
@@ -913,100 +913,99 @@ const TextBlock = memo(function TextBlock({
 
   const isEditing    = isSelected && isFocused;
   const showControls = isSelected;
+  const borderColor  = isEditing ? "#CCCCCC" : "#AAAAAA";
 
   return (
+    // Div externo: posicionamento absoluto, sem borda — só para localizar na página
     <div
       data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, width, zIndex,
         transform: `rotate(${rotation ?? 0}deg)`,
         transformOrigin: "center center",
-        // Três estados visuais
-        outline:    isEditing ? "1px dashed #CCCCCC" : isSelected ? "1px dashed #AAAAAA" : "none",
-        background: isEditing ? "rgba(255,255,255,0.6)" : "transparent",
-        borderRadius: 2,
         userSelect: "none",
         willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={e => {
-        if (e.target === textareaRef.current) return; // textarea trata por si
+        if (e.target === textareaRef.current) return;
         e.stopPropagation();
         onSelect();
       }}
     >
-      {/* Alça de drag — visível apenas quando selecionado */}
+      {/* Alça de drag ACIMA da caixa selecionada — fora da borda pontilhada */}
       {showControls && (
         <div
           onMouseDown={e => { e.stopPropagation(); onMouseDownDrag(e); }}
           style={{
-            height: 14, background: "rgba(0,0,0,0.03)", cursor: "move",
+            height: 14, cursor: "move",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, color: "#AAAAAA", userSelect: "none",
-            borderRadius: "2px 2px 0 0",
+            fontSize: 10, color: "#999999", userSelect: "none",
           }}
         >
           ⠿
         </div>
       )}
 
-      {/* Área de texto */}
-      <textarea
-        ref={textareaRef}
-        value={text}
-        placeholder="escreva..."
-        className="txt-block-ta"
-        onChange={e => onTextChange(e.target.value)}
-        onMouseDown={e => { e.stopPropagation(); onSelect(); }}
-        onFocus={() => { setIsFocused(true); onSelect(); }}
-        onBlur={() => setIsFocused(false)}
-        rows={1}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box",
-          background: "transparent", border: "none", outline: "none", resize: "none",
-          fontFamily, fontSize, color,
-          padding: "2px 4px", lineHeight: 1.45, overflow: "hidden",
-          cursor: "text",
-        }}
-      />
-
-      {/* Botão X de deletar */}
-      {isSelected && (
-        <div
-          onMouseDown={e => { e.stopPropagation(); onDelete(); }}
+      {/* Caixa com borda — só esta tem o outline */}
+      <div style={{
+        outline: isSelected ? `1px dashed ${borderColor}` : "none",
+        outlineOffset: 2,
+        position: "relative",
+        borderRadius: 2,
+      }}>
+        <textarea
+          ref={textareaRef}
+          value={text}
+          placeholder="escreva..."
+          className="txt-block-ta"
+          onChange={e => onTextChange(e.target.value)}
+          onMouseDown={e => { e.stopPropagation(); onSelect(); }}
+          onFocus={() => { setIsFocused(true); onSelect(); }}
+          onBlur={() => setIsFocused(false)}
+          rows={1}
           style={{
-            position: "absolute", top: -9, right: -9,
-            width: 18, height: 18, borderRadius: "50%",
-            background: "#656259", color: "#FFFFFF",
-            fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", zIndex: 9999, lineHeight: 1,
+            display: "block", width: "100%", boxSizing: "border-box",
+            background: "transparent", border: "none", outline: "none", resize: "none",
+            fontFamily, fontSize, color,
+            padding: "2px 4px", lineHeight: 1.45, overflow: "hidden",
+            cursor: "text",
           }}
-        >
-          ×
-        </div>
-      )}
+        />
 
-      {/* Handles de resize e rotação */}
-      {isSelected && (
-        <>
-          <RotationHandle onMouseDown={onMouseDownRotate} />
-          {["tl","tr","bl","br"].map(corner => {
-            const hpos = {
-              tl:{top:-5,left:-5}, tr:{top:-5,right:-5},
-              bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5},
-            }[corner];
-            return (
-              <div key={corner}
-                onMouseDown={e => { e.stopPropagation(); onMouseDownResize(e, corner); }}
-                style={{
-                  position: "absolute", width: 10, height: 10,
-                  background: "#FFFFFF", border: "1px solid #888888",
-                  cursor: RESIZE_CURSORS[corner], zIndex: 9999, ...hpos,
-                }}
-              />
-            );
-          })}
-        </>
-      )}
+        {/* Botão X de deletar */}
+        {isSelected && (
+          <div
+            onMouseDown={e => { e.stopPropagation(); onDelete(); }}
+            style={{
+              position: "absolute", top: -9, right: -9,
+              width: 18, height: 18, borderRadius: "50%",
+              background: "#656259", color: "#FFFFFF",
+              fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", zIndex: 9999, lineHeight: 1,
+            }}
+          >
+            ×
+          </div>
+        )}
+
+        {/* Handles de resize (sem rotação) */}
+        {isSelected && ["tl","tr","bl","br"].map(corner => {
+          const hpos = {
+            tl:{top:-5,left:-5}, tr:{top:-5,right:-5},
+            bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5},
+          }[corner];
+          return (
+            <div key={corner}
+              onMouseDown={e => { e.stopPropagation(); onMouseDownResize(e, corner); }}
+              style={{
+                position: "absolute", width: 10, height: 10,
+                background: "#FFFFFF", border: "1px solid #888888",
+                cursor: RESIZE_CURSORS[corner], zIndex: 9999, ...hpos,
+              }}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 });
@@ -1172,11 +1171,9 @@ const JournalPage = memo(function JournalPage({
         <TextBlock key={blk.id} data={blk} isSelected={selectedId === blk.id}
           onMouseDownDrag={e => handleTextDragStart(blk, e)}
           onMouseDownResize={(e, corner) => handleTextResizeStart(blk, e, corner)}
-          onMouseDownRotate={e => handleTextRotateStart(blk, e)}
           onSelect={() => onSelectId(blk.id)}
           onDelete={() => onDeleteTextBlock(dateKey, blk.id)}
-          onTextChange={text => onChangeTextBlock(dateKey, blk.id, { text })}
-          textPanelOpen={textPanelOpen} />
+          onTextChange={text => onChangeTextBlock(dateKey, blk.id, { text })} />
       ))}
       {/* Stickers */}
       {(stickers || []).map(stk => (

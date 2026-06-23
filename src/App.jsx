@@ -48,6 +48,16 @@ const TEXT_SIZES = [
   { label: "XL", value: 30 },
 ];
 
+const TOOLBAR_COLORS = ["#1A1A1A","#FFFFFF","#C0392B","#E91E8C","#8E44AD","#2980B9"];
+
+const FONT_SHORT = {
+  "'Caveat', cursive":                 "Caveat",
+  "'Courier New', monospace":          "Courier",
+  "'Covered By Your Grace', cursive":  "Covered",
+  "'Coming Soon', cursive":            "Coming",
+  "Impact, sans-serif":                "Impact",
+};
+
 const COLORS = [
   "#1A1A1A", "#FFFFFF", "#969287", "#C0392B",
   "#E91E8C", "#8E44AD", "#2980B9", "#27AE60",
@@ -398,121 +408,164 @@ function CameraPanel({ fileInputRef, onClose, open }) {
 }
 
 // ── TextPanel ─────────────────────────────────────────────────────────────────
-function TextPanel({ selectedBlock, onApplyToSelected, onClose, open }) {
-  const hasBlock  = !!selectedBlock;
-  const curFont   = selectedBlock?.fontFamily || FONTS[0].value;
-  const curColor  = selectedBlock?.color      || "#1A1A1A";
-  const curSize   = selectedBlock?.fontSize   || 16;
-
-  const SLabel = ({ children }) => (
-    <div style={{
-      fontFamily: UI_FONT, fontSize: 11, fontWeight: 600, color: "#969287",
-      textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, userSelect: "none",
-    }}>
-      {children}
-    </div>
-  );
-
-  // Prevent buttons from stealing focus from textarea
-  const noFocusSteal = e => e.preventDefault();
-
-  const controlsStyle = {
-    display: "flex", flexDirection: "column", gap: 18,
-    opacity: hasBlock ? 1 : 0.4,
-    pointerEvents: hasBlock ? "auto" : "none",
-    transition: "opacity 0.15s",
-  };
-
+function TextPanel({ onClose, open }) {
   return (
     <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open), overflowY: "auto" }}>
       <PanelHeader label="texto" onClose={onClose} />
-      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ padding: "20px 16px" }}>
+        <p style={{
+          fontFamily: "'Courier New', monospace", fontSize: 11, fontStyle: "italic",
+          color: "#555555", margin: 0, lineHeight: 1.6, userSelect: "none",
+        }}>
+          clique na página para escrever
+        </p>
+      </div>
+    </div>
+  );
+}
 
-        {/* Hint quando nenhum bloco está ativo */}
-        {!hasBlock && (
+// ── TextToolbar ────────────────────────────────────────────────────────────────
+function TextToolbar({ selectedBlock, onApply, onDelete }) {
+  const [pos, setPos]       = useState(null);
+  const [fontOpen, setFontOpen] = useState(false);
+
+  // Reposiciona quando o bloco muda de posição (depois do drag commitar estado)
+  useEffect(() => {
+    if (!selectedBlock) { setPos(null); return; }
+    const el = document.querySelector(`[data-id="${selectedBlock.id}"]`);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const toolH = 44;
+    const above = rect.top >= toolH + 8;
+    setPos({ top: above ? rect.top - toolH : rect.bottom + 8, left: rect.left });
+  }, [selectedBlock?.id, selectedBlock?.x, selectedBlock?.y, selectedBlock?.width]);
+
+  // Fechar font dropdown ao clicar fora
+  useEffect(() => {
+    if (!fontOpen) return;
+    const close = () => setFontOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [fontOpen]);
+
+  if (!selectedBlock || !pos) return null;
+
+  const noFocus = e => e.preventDefault();
+  const curFont  = selectedBlock.fontFamily || FONTS[0].value;
+  const curSize  = selectedBlock.fontSize   || 16;
+  const curColor = selectedBlock.color      || "#1A1A1A";
+
+  const Sep = () => <div style={{ width: 1, height: 16, background: "#333333", flexShrink: 0 }} />;
+
+  return (
+    <div
+      style={{
+        position: "fixed", top: pos.top, left: pos.left, zIndex: 500,
+        background: "#1A1A1A", borderRadius: 6, padding: "6px 10px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        display: "flex", alignItems: "center", gap: 6,
+        fontFamily: UI_FONT,
+      }}
+      onMouseDown={noFocus}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Font dropdown */}
+      <div style={{ position: "relative" }}>
+        <button
+          onMouseDown={noFocus}
+          onClick={e => { e.stopPropagation(); setFontOpen(v => !v); }}
+          style={{
+            width: 80, padding: "3px 6px", background: "#2A2A2A",
+            border: "1px solid #333333", borderRadius: 4,
+            color: "#CCCCCC", fontSize: 11, cursor: "pointer",
+            fontFamily: curFont, textAlign: "left",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}
+        >
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            {FONT_SHORT[curFont] || "Font"}
+          </span>
+          <span style={{ fontFamily: UI_FONT, fontSize: 9, marginLeft: 2, opacity: 0.6 }}>▾</span>
+        </button>
+        {fontOpen && (
           <div style={{
-            fontFamily: "'Courier New', monospace", fontSize: 10, fontStyle: "italic",
-            color: "#444444", textAlign: "center", userSelect: "none",
+            position: "absolute", top: "calc(100% + 4px)", left: 0,
+            background: "#1A1A1A", border: "1px solid #333333", borderRadius: 4,
+            overflow: "hidden", zIndex: 600, minWidth: 110,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
           }}>
-            clique na página para escrever
+            {FONTS.map(f => (
+              <div
+                key={f.value}
+                onMouseDown={noFocus}
+                onClick={e => { e.stopPropagation(); onApply({ fontFamily: f.value }); setFontOpen(false); }}
+                style={{
+                  padding: "7px 10px",
+                  fontFamily: f.value, fontSize: 13,
+                  color: curFont === f.value ? "#FFFFFF" : "#AAAAAA",
+                  background: curFont === f.value ? "#2A2A2A" : "transparent",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#222222"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = curFont === f.value ? "#2A2A2A" : "transparent"; }}
+              >
+                {f.label}
+              </div>
+            ))}
           </div>
         )}
-
-        <div style={controlsStyle}>
-          <div>
-            <SLabel>fonte</SLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {FONTS.map(f => {
-                const active = curFont === f.value;
-                return (
-                  <button
-                    key={f.value}
-                    onMouseDown={noFocusSteal}
-                    onClick={() => onApplyToSelected({ fontFamily: f.value })}
-                    style={{
-                      width: "100%", padding: "8px 10px",
-                      background: active ? "#252525" : "transparent",
-                      border: `1px solid ${active ? "#FFFFFF" : "#C8C2B8"}`,
-                      color: active ? "#FFFFFF" : "#969287",
-                      fontSize: 14, fontFamily: f.value, textAlign: "left",
-                      cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <SLabel>cor</SLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, justifyItems: "center" }}>
-              {COLORS.map(c => (
-                <div
-                  key={c}
-                  onMouseDown={noFocusSteal}
-                  onClick={() => onApplyToSelected({ color: c })}
-                  style={{
-                    width: 26, height: 26, borderRadius: "50%", background: c,
-                    cursor: "pointer",
-                    outline: curColor === c ? "2px solid #555555" : "none",
-                    outlineOffset: 2,
-                    border: c === "#FFFFFF" ? "1px solid #C8C2B8" : "none",
-                    boxSizing: "border-box", transition: "outline 0.1s",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SLabel>tamanho</SLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
-              {TEXT_SIZES.map(s => {
-                const active = curSize === s.value;
-                return (
-                  <button
-                    key={s.value}
-                    onMouseDown={noFocusSteal}
-                    onClick={() => onApplyToSelected({ fontSize: s.value })}
-                    style={{
-                      padding: "7px 0",
-                      background: active ? "#252525" : "transparent",
-                      border: `1px solid ${active ? "#FFFFFF" : "#C8C2B8"}`,
-                      color: active ? "#FFFFFF" : "#969287",
-                      fontFamily: UI_FONT, fontSize: 12, fontWeight: 600,
-                      cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
-                    }}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </div>
+
+      <Sep />
+
+      {/* Size buttons */}
+      {TEXT_SIZES.map(s => {
+        const active = curSize === s.value;
+        return (
+          <button key={s.value} onMouseDown={noFocus} onClick={() => onApply({ fontSize: s.value })}
+            style={{
+              width: 24, height: 24, borderRadius: 4, border: "none",
+              background: active ? "#333333" : "transparent",
+              color: active ? "#FFFFFF" : "#AAAAAA",
+              fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 600,
+              cursor: "pointer",
+            }}>
+            {s.label}
+          </button>
+        );
+      })}
+
+      <Sep />
+
+      {/* Color palette */}
+      {TOOLBAR_COLORS.map(c => (
+        <div key={c} onMouseDown={noFocus} onClick={() => onApply({ color: c })}
+          style={{
+            width: 14, height: 14, borderRadius: "50%", background: c,
+            cursor: "pointer", flexShrink: 0,
+            outline: curColor === c ? "2px solid #FFFFFF" : "none",
+            outlineOffset: 1,
+            border: c === "#FFFFFF" ? "1px solid #555555" : "none",
+            boxSizing: "border-box",
+          }}
+        />
+      ))}
+
+      <Sep />
+
+      {/* Delete */}
+      <button onMouseDown={noFocus} onClick={onDelete}
+        style={{
+          width: 24, height: 24, border: "none", background: "transparent",
+          color: "#666666", fontSize: 16, cursor: "pointer", borderRadius: 4,
+          display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = "#FF4444"; }}
+        onMouseLeave={e => { e.currentTarget.style.color = "#666666"; }}
+      >
+        ×
+      </button>
     </div>
   );
 }
@@ -836,91 +889,120 @@ const Polaroid = memo(function Polaroid({ data, isSelected, onMouseDownDrag, onM
 });
 
 // ── TextBlock ─────────────────────────────────────────────────────────────────
-const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate, textPanelOpen }) {
-  const { x, y, text, fontFamily, fontSize, color, zIndex, rotation } = data;
+const TextBlock = memo(function TextBlock({
+  data, isSelected,
+  onMouseDownDrag, onMouseDownResize, onMouseDownRotate,
+  onSelect, onDelete, onTextChange,
+}) {
+  const { x, y, width, text, fontFamily, fontSize, color, zIndex, rotation } = data;
   const textareaRef = useRef(null);
-  const mirrorRef   = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
 
-  useEffect(() => {
-    const ta     = textareaRef.current;
-    const mirror = mirrorRef.current;
-    if (!ta || !mirror) return;
-    // Auto-height
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-    // Auto-width: mede a largura máxima do conteúdo via espelho
-    const w = Math.max(mirror.scrollWidth + 4, 24);
-    ta.style.width = w + "px";
-  }, [text, fontSize, fontFamily]);
-
-  // Auto-foco ao criar (bloco começa vazio)
+  // Auto-foco ao criar (bloco vazio)
   useEffect(() => {
     if (data.text === "" && textareaRef.current) textareaRef.current.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-height via scrollHeight
+  useEffect(() => {
+    const ta = textareaRef.current; if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }, [text, fontSize, fontFamily]);
+
+  const isEditing    = isSelected && isFocused;
+  const showControls = isSelected;
+
   return (
     <div
       data-id={data.id}
       style={{
-        position: "absolute", left: x, top: y, zIndex,
-        display: "inline-block",
-        // Quando painel de texto aberto: cursor text; senão: grab
-        cursor: textPanelOpen ? "text" : "grab",
+        position: "absolute", left: x, top: y, width, zIndex,
         transform: `rotate(${rotation ?? 0}deg)`,
         transformOrigin: "center center",
-        outline: isSelected ? "1px dashed #AAAAAA" : "none",
-        outlineOffset: 3, userSelect: "none",
+        // Três estados visuais
+        outline:    isEditing ? "1px dashed #CCCCCC" : isSelected ? "1px dashed #AAAAAA" : "none",
+        background: isEditing ? "rgba(255,255,255,0.6)" : "transparent",
+        borderRadius: 2,
+        userSelect: "none",
         willChange: isSelected ? "transform" : "auto",
       }}
       onMouseDown={e => {
-        // Se clicou na textarea, deixa ela tratar (via onMouseDown próprio)
-        if (e.target === textareaRef.current) return;
-        // Clique na borda/área do bloco → seleciona + inicia drag
-        onMouseDownDrag(e);
+        if (e.target === textareaRef.current) return; // textarea trata por si
+        e.stopPropagation();
+        onSelect();
       }}
     >
-      {/* Espelho invisível para medir largura real do texto */}
-      <span
-        ref={mirrorRef}
-        aria-hidden
-        style={{
-          visibility: "hidden", position: "fixed", top: -9999, left: -9999,
-          whiteSpace: "pre",
-          fontFamily, fontSize, lineHeight: 1.45, pointerEvents: "none",
-        }}
-      >
-        {text || "escreva algo..."}
-      </span>
+      {/* Alça de drag — visível apenas quando selecionado */}
+      {showControls && (
+        <div
+          onMouseDown={e => { e.stopPropagation(); onMouseDownDrag(e); }}
+          style={{
+            height: 14, background: "rgba(0,0,0,0.03)", cursor: "move",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, color: "#AAAAAA", userSelect: "none",
+            borderRadius: "2px 2px 0 0",
+          }}
+        >
+          ⠿
+        </div>
+      )}
 
+      {/* Área de texto */}
       <textarea
-        ref={textareaRef} value={text} placeholder="escreva algo..."
+        ref={textareaRef}
+        value={text}
+        placeholder="escreva..."
+        className="txt-block-ta"
         onChange={e => onTextChange(e.target.value)}
-        onMouseDown={e => {
-          e.stopPropagation(); // não propaga ao div pai (evita drag)
-          onSelect();          // seleciona o bloco (modo edição)
-        }}
+        onMouseDown={e => { e.stopPropagation(); onSelect(); }}
+        onFocus={() => { setIsFocused(true); onSelect(); }}
+        onBlur={() => setIsFocused(false)}
         rows={1}
         style={{
-          display: "block", background: "transparent",
-          border: "none", outline: "none", resize: "none",
+          display: "block", width: "100%", boxSizing: "border-box",
+          background: "transparent", border: "none", outline: "none", resize: "none",
           fontFamily, fontSize, color,
-          cursor: "text", padding: 0, lineHeight: 1.45, overflow: "hidden",
-          userSelect: "text", minWidth: 24,
+          padding: "2px 4px", lineHeight: 1.45, overflow: "hidden",
+          cursor: "text",
         }}
       />
+
+      {/* Botão X de deletar */}
+      {isSelected && (
+        <div
+          onMouseDown={e => { e.stopPropagation(); onDelete(); }}
+          style={{
+            position: "absolute", top: -9, right: -9,
+            width: 18, height: 18, borderRadius: "50%",
+            background: "#656259", color: "#FFFFFF",
+            fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", zIndex: 9999, lineHeight: 1,
+          }}
+        >
+          ×
+        </div>
+      )}
+
+      {/* Handles de resize e rotação */}
       {isSelected && (
         <>
           <RotationHandle onMouseDown={onMouseDownRotate} />
-          <div onMouseDown={e => { e.stopPropagation(); onDelete(); }}
-            style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
-            ×
-          </div>
           {["tl","tr","bl","br"].map(corner => {
-            const pos = { tl:{top:-5,left:-5}, tr:{top:-5,right:-5}, bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5} }[corner];
+            const hpos = {
+              tl:{top:-5,left:-5}, tr:{top:-5,right:-5},
+              bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5},
+            }[corner];
             return (
-              <div key={corner} onMouseDown={e => { e.stopPropagation(); onMouseDownResize(e, corner); }}
-                style={{ position: "absolute", width: 10, height: 10, background: "#FFFFFF", border: "1px solid #888888", cursor: RESIZE_CURSORS[corner], zIndex: 9999, ...pos }} />
+              <div key={corner}
+                onMouseDown={e => { e.stopPropagation(); onMouseDownResize(e, corner); }}
+                style={{
+                  position: "absolute", width: 10, height: 10,
+                  background: "#FFFFFF", border: "1px solid #888888",
+                  cursor: RESIZE_CURSORS[corner], zIndex: 9999, ...hpos,
+                }}
+              />
             );
           })}
         </>
@@ -1523,9 +1605,12 @@ export default function App() {
           }
           const dW = dims?.w ?? 80;
           const dH = dims?.h ?? 80;
-          const newX = clamp(e.clientX - pageLeft - mouseOffsetX, 0, PAGE_W - dW);
+          const TM = 16; // margem interna para texto
+          const newX = type === "text"
+            ? clamp(e.clientX - pageLeft - mouseOffsetX, TM, PAGE_W - dW - TM)
+            : clamp(e.clientX - pageLeft - mouseOffsetX, 0, PAGE_W - dW);
           const newY = type === "text"
-            ? clamp(e.clientY - pageTop - mouseOffsetY, 0, PAGE_H - 20)
+            ? clamp(e.clientY - pageTop - mouseOffsetY, TM, PAGE_H - 20 - TM)
             : clamp(e.clientY - pageTop - mouseOffsetY, 0, PAGE_H - dH);
           const el = document.querySelector(`[data-id="${id}"]`);
           if (el) {
@@ -1720,10 +1805,13 @@ export default function App() {
 
   // ── Add text block na posição do clique ───────────────────────────────────
   const addTextBlockAt = (x, y, dateKey) => {
+    const MARGIN = 16;
     const W = 160; maxZRef.current += 1;
     const blk = {
       id: `txt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-      x, y, width: W,
+      x: clamp(x, MARGIN, PAGE_W - W - MARGIN),
+      y: clamp(y, MARGIN, PAGE_H - MARGIN),
+      width: W,
       text: "", fontFamily: FONTS[0].value, fontSize: 16, color: "#1A1A1A",
       rotation: 0, zIndex: maxZRef.current,
     };
@@ -1917,13 +2005,17 @@ export default function App() {
       {/* ── PANELS ─────────────────────────────────────────────────────────── */}
       <CameraPanel  fileInputRef={fileInputRef} onClose={closePanel} open={openPanel === "camera"} />
       <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} />
-      <TextPanel
-        selectedBlock={selectedTextBlock}
-        onApplyToSelected={applyToSelected}
-        onClose={closePanel}
-        open={openPanel === "text"}
-      />
+      <TextPanel onClose={closePanel} open={openPanel === "text"} />
       <PaperPanel onAddPaper={addPaper} onClose={closePanel} open={openPanel === "paper"} />
+
+      {/* Toolbar flutuante de texto — fixed, fora do DOM do caderno */}
+      {selInfo?.type === "text" && selectedTextBlock && (
+        <TextToolbar
+          selectedBlock={selectedTextBlock}
+          onApply={applyToSelected}
+          onDelete={() => deleteTextBlock(selInfo.key, selectedId)}
+        />
+      )}
 
       {/* ── AUTH MODAL ───────────────────────────────────────────────────── */}
       {showAuthModal && (

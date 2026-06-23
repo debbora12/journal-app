@@ -54,6 +54,11 @@ body {
   margin: 0;
 }
 
+.txt-block-ta::placeholder {
+  color: #BBBBBB;
+  font-style: italic;
+}
+
 #root {
   width: 1126px;
   max-width: 100%;

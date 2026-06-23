@@ -1006,21 +1006,6 @@ const JournalPage = memo(function JournalPage({
       }}
       onMouseDown={() => onSelectId(null)}
     >
-      {/* Date tab */}
-      <div style={{
-        position: "absolute", top: -26,
-        [isLeft ? "left" : "right"]: 8,
-        height: 26,
-        background: "#EDE8DF", border: "1px solid #C8C2B8",
-        borderRadius: "3px 3px 0 0",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "0 10px",
-        fontFamily: UI_FONT, fontSize: 12, fontWeight: 500,
-        color: "#656259", letterSpacing: "0.06em", userSelect: "none",
-      }}>
-        {label}
-      </div>
-
       {/* Papers */}
       {(papers || []).map(pap => (
         <PaperElement key={pap.id} data={pap} isSelected={selectedId === pap.id}

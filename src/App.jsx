@@ -41,6 +41,13 @@ const FONTS = [
   { label: "Impact",                value: "Impact, sans-serif" },
 ];
 
+const TEXT_SIZES = [
+  { label: "S",  value: 12 },
+  { label: "M",  value: 16 },
+  { label: "L",  value: 22 },
+  { label: "XL", value: 30 },
+];
+
 const COLORS = [
   "#1A1A1A", "#FFFFFF", "#969287", "#C0392B",
   "#E91E8C", "#8E44AD", "#2980B9", "#27AE60",
@@ -391,10 +398,11 @@ function CameraPanel({ fileInputRef, onClose, open }) {
 }
 
 // ── TextPanel ─────────────────────────────────────────────────────────────────
-function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, open }) {
-  const [hovBtn, setHovBtn] = useState(false);
-  const curFont  = selectedBlock?.fontFamily || FONTS[0].value;
-  const curColor = selectedBlock?.color      || "#1A1A1A";
+function TextPanel({ selectedBlock, onApplyToSelected, onClose, open }) {
+  const hasBlock  = !!selectedBlock;
+  const curFont   = selectedBlock?.fontFamily || FONTS[0].value;
+  const curColor  = selectedBlock?.color      || "#1A1A1A";
+  const curSize   = selectedBlock?.fontSize   || 16;
 
   const SLabel = ({ children }) => (
     <div style={{
@@ -405,68 +413,103 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
     </div>
   );
 
+  // Prevent buttons from stealing focus from textarea
+  const noFocusSteal = e => e.preventDefault();
+
+  const controlsStyle = {
+    display: "flex", flexDirection: "column", gap: 18,
+    opacity: hasBlock ? 1 : 0.4,
+    pointerEvents: hasBlock ? "auto" : "none",
+    transition: "opacity 0.15s",
+  };
+
   return (
     <div onClick={e => e.stopPropagation()} style={{ ...panelBase(open), overflowY: "auto" }}>
       <PanelHeader label="texto" onClose={onClose} />
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18 }}>
-        <button
-          onClick={onAddTextBlock}
-          onMouseEnter={() => setHovBtn(true)}
-          onMouseLeave={() => setHovBtn(false)}
-          style={{
-            border: `1px solid ${hovBtn ? "#A0A09A" : "#C8C2B8"}`,
-            background: hovBtn ? "#E5E0D2" : "transparent",
-            color: hovBtn ? "#656259" : "#969287",
-            fontFamily: UI_FONT, fontSize: 13, fontWeight: 500,
-            padding: "9px 0", width: "100%", cursor: "pointer",
-            transition: "all 0.15s", borderRadius: 4, letterSpacing: "0.04em",
-          }}
-        >
-          + adicionar bloco
-        </button>
 
-        <div>
-          <SLabel>fonte</SLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {FONTS.map(f => {
-              const active = curFont === f.value;
-              return (
-                <button
-                  key={f.value}
-                  onClick={() => onApplyToSelected({ fontFamily: f.value })}
-                  style={{
-                    width: "100%", padding: "8px 10px",
-                    background: active ? "#E5E0D2" : "transparent",
-                    border: `1px solid ${active ? "#A0A09A" : "#C8C2B8"}`,
-                    color: active ? "#1A1A1A" : "#969287",
-                    fontSize: 14, fontFamily: f.value, textAlign: "left",
-                    cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
-                  }}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
+        {/* Hint quando nenhum bloco está ativo */}
+        {!hasBlock && (
+          <div style={{
+            fontFamily: "'Courier New', monospace", fontSize: 10, fontStyle: "italic",
+            color: "#444444", textAlign: "center", userSelect: "none",
+          }}>
+            clique na página para escrever
           </div>
-        </div>
+        )}
 
-        <div>
-          <SLabel>cor</SLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, justifyItems: "center" }}>
-            {COLORS.map(c => (
-              <div
-                key={c}
-                onClick={() => onApplyToSelected({ color: c })}
-                style={{
-                  width: 26, height: 26, borderRadius: "50%", background: c,
-                  cursor: "pointer",
-                  outline: curColor === c ? "2px solid #555555" : "none",
-                  outlineOffset: 2,
-                  border: c === "#FFFFFF" ? "1px solid #C8C2B8" : "none",
-                  boxSizing: "border-box", transition: "outline 0.1s",
-                }}
-              />
-            ))}
+        <div style={controlsStyle}>
+          <div>
+            <SLabel>fonte</SLabel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {FONTS.map(f => {
+                const active = curFont === f.value;
+                return (
+                  <button
+                    key={f.value}
+                    onMouseDown={noFocusSteal}
+                    onClick={() => onApplyToSelected({ fontFamily: f.value })}
+                    style={{
+                      width: "100%", padding: "8px 10px",
+                      background: active ? "#252525" : "transparent",
+                      border: `1px solid ${active ? "#FFFFFF" : "#C8C2B8"}`,
+                      color: active ? "#FFFFFF" : "#969287",
+                      fontSize: 14, fontFamily: f.value, textAlign: "left",
+                      cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <SLabel>cor</SLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, justifyItems: "center" }}>
+              {COLORS.map(c => (
+                <div
+                  key={c}
+                  onMouseDown={noFocusSteal}
+                  onClick={() => onApplyToSelected({ color: c })}
+                  style={{
+                    width: 26, height: 26, borderRadius: "50%", background: c,
+                    cursor: "pointer",
+                    outline: curColor === c ? "2px solid #555555" : "none",
+                    outlineOffset: 2,
+                    border: c === "#FFFFFF" ? "1px solid #C8C2B8" : "none",
+                    boxSizing: "border-box", transition: "outline 0.1s",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SLabel>tamanho</SLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+              {TEXT_SIZES.map(s => {
+                const active = curSize === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    onMouseDown={noFocusSteal}
+                    onClick={() => onApplyToSelected({ fontSize: s.value })}
+                    style={{
+                      padding: "7px 0",
+                      background: active ? "#252525" : "transparent",
+                      border: `1px solid ${active ? "#FFFFFF" : "#C8C2B8"}`,
+                      color: active ? "#FFFFFF" : "#969287",
+                      fontFamily: UI_FONT, fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", borderRadius: 3, transition: "all 0.1s",
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -793,7 +836,7 @@ const Polaroid = memo(function Polaroid({ data, isSelected, onMouseDownDrag, onM
 });
 
 // ── TextBlock ─────────────────────────────────────────────────────────────────
-const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate }) {
+const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, onSelect, onDelete, onTextChange, onMouseDownResize, onMouseDownRotate, textPanelOpen }) {
   const { x, y, text, fontFamily, fontSize, color, zIndex, rotation } = data;
   const textareaRef = useRef(null);
   const mirrorRef   = useRef(null);
@@ -810,6 +853,7 @@ const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, o
     ta.style.width = w + "px";
   }, [text, fontSize, fontFamily]);
 
+  // Auto-foco ao criar (bloco começa vazio)
   useEffect(() => {
     if (data.text === "" && textareaRef.current) textareaRef.current.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -820,15 +864,21 @@ const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, o
       data-id={data.id}
       style={{
         position: "absolute", left: x, top: y, zIndex,
-        display: "inline-block",            // largura se ajusta ao conteúdo
-        cursor: "grab",
+        display: "inline-block",
+        // Quando painel de texto aberto: cursor text; senão: grab
+        cursor: textPanelOpen ? "text" : "grab",
         transform: `rotate(${rotation ?? 0}deg)`,
         transformOrigin: "center center",
-        outline: isSelected ? "1px dashed #888888" : "none",
+        outline: isSelected ? "1px dashed #AAAAAA" : "none",
         outlineOffset: 3, userSelect: "none",
         willChange: isSelected ? "transform" : "auto",
       }}
-      onMouseDown={onMouseDownDrag}
+      onMouseDown={e => {
+        // Se clicou na textarea, deixa ela tratar (via onMouseDown próprio)
+        if (e.target === textareaRef.current) return;
+        // Clique na borda/área do bloco → seleciona + inicia drag
+        onMouseDownDrag(e);
+      }}
     >
       {/* Espelho invisível para medir largura real do texto */}
       <span
@@ -836,7 +886,7 @@ const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, o
         aria-hidden
         style={{
           visibility: "hidden", position: "fixed", top: -9999, left: -9999,
-          whiteSpace: "pre",              // sem quebra: mede linha mais longa
+          whiteSpace: "pre",
           fontFamily, fontSize, lineHeight: 1.45, pointerEvents: "none",
         }}
       >
@@ -847,15 +897,15 @@ const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, o
         ref={textareaRef} value={text} placeholder="escreva algo..."
         onChange={e => onTextChange(e.target.value)}
         onMouseDown={e => {
-          onSelect();
-          onMouseDownDrag(e);
+          e.stopPropagation(); // não propaga ao div pai (evita drag)
+          onSelect();          // seleciona o bloco (modo edição)
         }}
         rows={1}
         style={{
           display: "block", background: "transparent",
           border: "none", outline: "none", resize: "none",
           fontFamily, fontSize, color,
-          cursor: "inherit", padding: 0, lineHeight: 1.45, overflow: "hidden",
+          cursor: "text", padding: 0, lineHeight: 1.45, overflow: "hidden",
           userSelect: "text", minWidth: 24,
         }}
       />
@@ -866,7 +916,6 @@ const TextBlock = memo(function TextBlock({ data, isSelected, onMouseDownDrag, o
             style={{ position: "absolute", top: -9, right: -9, width: 18, height: 18, borderRadius: "50%", background: "#656259", color: "#FFFFFF", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 9999, lineHeight: 1 }}>
             ×
           </div>
-          {/* Resize handles — apenas largura (esquerda e direita) */}
           {["tl","tr","bl","br"].map(corner => {
             const pos = { tl:{top:-5,left:-5}, tr:{top:-5,right:-5}, bl:{bottom:-5,left:-5}, br:{bottom:-5,right:-5} }[corner];
             return (
@@ -889,9 +938,9 @@ const JournalPage = memo(function JournalPage({
   onDeleteTextBlock, onChangeTextBlock,
   onDeleteSticker, onDeletePaper,
   dragRef, resizeRef, rotateRef, dateKey, siblingDateKey,
+  textPanelOpen, onCreateTextAt,
 }) {
   const isLeft = side === "left";
-  const label = formatDate(date);
   const pageRef = useRef(null);
 
   const getSiblingLeft = (rect) =>
@@ -1004,8 +1053,20 @@ const JournalPage = memo(function JournalPage({
         background: "transparent",
         backgroundImage: PAGE_GRID, backgroundSize: "20px 20px",
         position: "relative", boxSizing: "border-box", flexShrink: 0,
+        // Cursor crosshair quando painel texto aberto e hover sobre fundo vazio
+        cursor: textPanelOpen ? "crosshair" : "default",
       }}
-      onMouseDown={() => onSelectId(null)}
+      onMouseDown={e => {
+        // Só dispara se o clique for direto no fundo da página (não em elemento filho)
+        if (e.target !== pageRef.current) return;
+        if (textPanelOpen) {
+          // Cria texto na posição exata do clique
+          const rect = pageRef.current.getBoundingClientRect();
+          onCreateTextAt(Math.round(e.clientX - rect.left), Math.round(e.clientY - rect.top));
+        } else {
+          onSelectId(null);
+        }
+      }}
     >
       {/* Papers */}
       {(papers || []).map(pap => (
@@ -1032,7 +1093,8 @@ const JournalPage = memo(function JournalPage({
           onMouseDownRotate={e => handleTextRotateStart(blk, e)}
           onSelect={() => onSelectId(blk.id)}
           onDelete={() => onDeleteTextBlock(dateKey, blk.id)}
-          onTextChange={text => onChangeTextBlock(dateKey, blk.id, { text })} />
+          onTextChange={text => onChangeTextBlock(dateKey, blk.id, { text })}
+          textPanelOpen={textPanelOpen} />
       ))}
       {/* Stickers */}
       {(stickers || []).map(stk => (
@@ -1362,6 +1424,15 @@ export default function App() {
     ? (pageData[selInfo.key]?.textBlocks || []).find(b => b.id === selectedId) || null : null;
 
   const selectId = (id) => {
+    // Auto-deleta bloco de texto vazio ao desselecionar
+    if (selectedId && selectedId !== id && selInfo?.type === "text") {
+      const page = pageData[selInfo.key];
+      const blk = (page?.textBlocks || []).find(b => b.id === selectedId);
+      if (blk && !blk.text?.trim()) {
+        mutatePage(selInfo.key, p => ({ ...p, textBlocks: (p.textBlocks||[]).filter(x => x.id !== selectedId) }));
+      }
+    }
+    // Bumpa z-index do elemento recém selecionado
     if (id && id !== selectedId) {
       maxZRef.current += 1; const z = maxZRef.current;
       [leftKey, rightKey].forEach(k => {
@@ -1647,14 +1718,16 @@ export default function App() {
     reader.readAsDataURL(file); e.target.value = "";
   };
 
-  // ── Add text block ────────────────────────────────────────────────────────
-  const addTextBlock = () => {
+  // ── Add text block na posição do clique ───────────────────────────────────
+  const addTextBlockAt = (x, y, dateKey) => {
     const W = 160; maxZRef.current += 1;
-    const blk = { id: `txt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-      x: Math.round((PAGE_W-W)/2), y: Math.round(PAGE_H/2-24),
-      width: W, text: "", fontFamily: FONTS[0].value, fontSize: 16, color: "#1A1A1A",
-      rotation: 0, zIndex: maxZRef.current };
-    mutatePage(rightKey, page => ({ ...page, textBlocks: [...(page.textBlocks||[]), blk] }));
+    const blk = {
+      id: `txt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      x, y, width: W,
+      text: "", fontFamily: FONTS[0].value, fontSize: 16, color: "#1A1A1A",
+      rotation: 0, zIndex: maxZRef.current,
+    };
+    mutatePage(dateKey, page => ({ ...page, textBlocks: [...(page.textBlocks||[]), blk] }));
     setSelectedId(blk.id);
   };
 
@@ -1846,7 +1919,6 @@ export default function App() {
       <StickerPanel onAddSticker={addSticker}   onClose={closePanel} open={openPanel === "stickers"} />
       <TextPanel
         selectedBlock={selectedTextBlock}
-        onAddTextBlock={addTextBlock}
         onApplyToSelected={applyToSelected}
         onClose={closePanel}
         open={openPanel === "text"}
@@ -1973,6 +2045,8 @@ export default function App() {
               onDeleteSticker={deleteSticker} onDeletePaper={deletePaper}
               dragRef={dragRef} resizeRef={resizeRef} rotateRef={rotateRef}
               dateKey={leftKey} siblingDateKey={rightKey}
+              textPanelOpen={openPanel === "text"}
+              onCreateTextAt={(x, y) => addTextBlockAt(x, y, leftKey)}
             />
           </div>
 
@@ -2003,6 +2077,8 @@ export default function App() {
               onDeleteSticker={deleteSticker} onDeletePaper={deletePaper}
               dragRef={dragRef} resizeRef={resizeRef} rotateRef={rotateRef}
               dateKey={rightKey} siblingDateKey={leftKey}
+              textPanelOpen={openPanel === "text"}
+              onCreateTextAt={(x, y) => addTextBlockAt(x, y, rightKey)}
             />
           </div>
         </div>

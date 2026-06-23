@@ -224,6 +224,19 @@ const DATE_STICKERS = [
   { id: 'date-december',  url: '/stickers/dates/december.webp' },
 ];
 
+const NUMBER_STICKERS = [
+  { id: 'num-0', url: '/stickers/dates/num-0.webp' },
+  { id: 'num-1', url: '/stickers/dates/num-1.webp' },
+  { id: 'num-2', url: '/stickers/dates/num-2.webp' },
+  { id: 'num-3', url: '/stickers/dates/num-3.webp' },
+  { id: 'num-4', url: '/stickers/dates/num-4.webp' },
+  { id: 'num-5', url: '/stickers/dates/num-5.webp' },
+  { id: 'num-6', url: '/stickers/dates/num-6.webp' },
+  { id: 'num-7', url: '/stickers/dates/num-7.webp' },
+  { id: 'num-8', url: '/stickers/dates/num-8.webp' },
+  { id: 'num-9', url: '/stickers/dates/num-9.webp' },
+];
+
 const PAPERS = [
   { key: "paper08", url: "/papers/paper08.webp" },
   { key: "paper09", url: "/papers/paper09.webp" },
@@ -541,6 +554,33 @@ function StickerPanel({ onAddSticker, onClose, open }) {
                 src={hasOpenedRef.current ? p.url : undefined}
                 alt="" draggable={false} loading="lazy" decoding="async"
                 style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* ── Numbers ── */}
+        <div style={{ fontFamily: UI_FONT, fontSize: 10, fontWeight: 600, color: "#666", textTransform: "uppercase", letterSpacing: "0.12em", margin: "16px 0 8px", userSelect: "none" }}>
+          Numbers
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+          {NUMBER_STICKERS.map(p => (
+            <div
+              key={p.id}
+              onClick={() => onAddSticker('png-sticker', p.url)}
+              style={{
+                height: 52, background: "#1C1C1C", borderRadius: 6, padding: 6,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                outline: "1px solid transparent", transition: "background 0.12s, outline 0.12s",
+                boxSizing: "border-box",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
+            >
+              <img
+                src={hasOpenedRef.current ? p.url : undefined}
+                alt="" draggable={false} loading="lazy" decoding="async"
+                style={{ maxHeight: 40, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
               />
             </div>
           ))}

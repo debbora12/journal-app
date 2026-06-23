@@ -16,7 +16,7 @@ const LEFT_PAGE_X  = PAD;                                    // 20
 const RIGHT_PAGE_X = PAD + PAGE_W + SPINE_W;                 // 460
 const PAGE_Y    = PAD;                                       // 20
 
-const COVER_URL = "https://raw.githubusercontent.com/debbora12/journal-assets/main/covers/Design%20sem%20nome.png";
+const COVER_URL = "/covers/caderno.webp";
 
 // ── SVG data URIs ─────────────────────────────────────────────────────────────
 const MAT_GRID = `url("data:image/svg+xml,${encodeURIComponent(
@@ -178,54 +178,53 @@ function stickerImg(url, w, h) {
 const STICKER_DEFS = {
   "star_silver_png": {
     label: "Estrela Prata", vw: 1, vh: 1, defaultW: 90,
-    render: (uid, w, h) => stickerImg("https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/Frame_2-removebg-preview.png", w, h),
+    render: (uid, w, h) => stickerImg("/stickers/stk-star-silver.webp", w, h),
   },
   "star_gold_png": {
     label: "Estrelas Douradas", vw: 1, vh: 1, defaultW: 90,
-    render: (uid, w, h) => stickerImg("https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/image_10-removebg-preview.png", w, h),
+    render: (uid, w, h) => stickerImg("/stickers/stk-star-gold.webp", w, h),
   },
   "heart_pink_png": {
     label: "Coração Rosa", vw: 1, vh: 1, defaultW: 80,
-    render: (uid, w, h) => stickerImg("https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/Frame_3-removebg-preview.png", w, h),
+    render: (uid, w, h) => stickerImg("/stickers/stk-heart-pink.webp", w, h),
   },
   "pin_red": {
     label: "Pin Vermelho", vw: 1, vh: 1, defaultW: 60,
-    render: (uid, w, h) => stickerImg("https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/image_3-removebg-preview.png", w, h),
+    render: (uid, w, h) => stickerImg("/stickers/stk-pin-red.webp", w, h),
   },
   "clip_metal": {
     label: "Clipe Metálico", vw: 1, vh: 1, defaultW: 60,
-    render: (uid, w, h) => stickerImg("https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/image_2-removebg-preview.png", w, h),
+    render: (uid, w, h) => stickerImg("/stickers/stk-clip-metal.webp", w, h),
   },
 };
 
 const PNG_STICKERS = [
-  { id: 'png-1',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/f5ceee0c-85a5-4a57-aafd-495829b233bf.png' },
-  { id: 'png-2',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/efff2121-b5c0-4ef6-82b5-dd350187d04e.png' },
-  { id: 'png-3',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/e39d01c3-95ef-4cd6-991c-042bdebfde6a.png' },
-  { id: 'png-4',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/dfdbf69c-936a-4de0-97ea-b4d4188b8788.png' },
-  { id: 'png-5',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/dc459b3e-f7ba-4569-9758-78c1b56ce880.png' },
-  { id: 'png-6',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/d60a51f5-8b20-478e-af94-2f2dc0f07cb5.png' },
-  { id: 'png-7',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/d0787db4-e704-4f21-8a58-44b2ecb3befe.png' },
-  { id: 'png-8',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/cb49f39d-99fd-44e7-9535-9f20b89b30bb.png' },
-  { id: 'png-9',  url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/c869f5f4-72d1-4315-b38c-41205ade9aef.png' },
-  { id: 'png-10', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/sem-bg/a692bc6b-b95e-47a3-99f9-91945d1aad97.png' },
+  { id: 'png-1',  url: '/stickers/png-1.webp' },
+  { id: 'png-2',  url: '/stickers/png-2.webp' },
+  { id: 'png-3',  url: '/stickers/png-3.webp' },
+  { id: 'png-4',  url: '/stickers/png-4.webp' },
+  { id: 'png-5',  url: '/stickers/png-5.webp' },
+  { id: 'png-6',  url: '/stickers/png-6.webp' },
+  { id: 'png-7',  url: '/stickers/png-7.webp' },
+  { id: 'png-8',  url: '/stickers/png-8.webp' },
+  { id: 'png-9',  url: '/stickers/png-9.webp' },
 ];
 
 const PAPERS = [
-  { key: "paper08", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2008.png" },
-  { key: "paper09", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2009.png" },
-  { key: "paper12", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2012.png" },
-  { key: "paper17", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2017.png" },
-  { key: "paper18", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2018.png" },
-  { key: "paper27", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2027.png" },
-  { key: "paper28", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2028.png" },
-  { key: "paper46", url: "https://raw.githubusercontent.com/debbora12/journal-assets/main/Paper%2046.png" },
+  { key: "paper08", url: "/papers/paper08.webp" },
+  { key: "paper09", url: "/papers/paper09.webp" },
+  { key: "paper12", url: "/papers/paper12.webp" },
+  { key: "paper17", url: "/papers/paper17.webp" },
+  { key: "paper18", url: "/papers/paper18.webp" },
+  { key: "paper27", url: "/papers/paper27.webp" },
+  { key: "paper28", url: "/papers/paper28.webp" },
+  { key: "paper46", url: "/papers/paper46.webp" },
 ];
 
 // ── Backgrounds ───────────────────────────────────────────────────────────────
 const BACKGROUNDS = [
   { id: 'cutting-mat', label: 'Cutting Mat', type: 'svg',   color: '#2D5A3D' },
-  { id: 'bg3',         label: 'Background 3', type: 'image', url: 'https://raw.githubusercontent.com/debbora12/journal-assets/main/backgrounds/Gemini_Generated_Image_np18tnnp18tnnp18.png' },
+  { id: 'bg3',         label: 'Background 3', type: 'image', url: '/backgrounds/bg3.webp' },
 ];
 
 // ── SidebarIcon ───────────────────────────────────────────────────────────────
@@ -449,6 +448,10 @@ function TextPanel({ selectedBlock, onAddTextBlock, onApplyToSelected, onClose, 
 
 // ── StickerPanel ──────────────────────────────────────────────────────────────
 function StickerPanel({ onAddSticker, onClose, open }) {
+  // Lazy: só carrega previews na primeira vez que o painel abre
+  const hasOpenedRef = useRef(false);
+  if (open && !hasOpenedRef.current) hasOpenedRef.current = true;
+
   return (
     <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="stickers" onClose={onClose} />
@@ -468,11 +471,14 @@ function StickerPanel({ onAddSticker, onClose, open }) {
               onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
             >
-              <img src={p.url} alt="" draggable={false}
-                style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }} />
+              <img
+                src={hasOpenedRef.current ? p.url : undefined}
+                alt="" draggable={false} loading="lazy" decoding="async"
+                style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+              />
             </div>
           ))}
-          {/* SVG stickers */}
+          {/* SVG stickers — só renderiza previews após o painel abrir */}
           {Object.entries(STICKER_DEFS).map(([type, def]) => {
             const ph = 56;
             const pw = Math.round((ph * def.vw) / def.vh);
@@ -489,7 +495,7 @@ function StickerPanel({ onAddSticker, onClose, open }) {
                 onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
               >
-                {def.render(`prev_${type}`, pw, ph)}
+                {hasOpenedRef.current ? def.render(`prev_${type}`, pw, ph) : null}
               </div>
             );
           })}
@@ -501,6 +507,10 @@ function StickerPanel({ onAddSticker, onClose, open }) {
 
 // ── PaperPanel ────────────────────────────────────────────────────────────────
 function PaperPanel({ open, onClose, onAddPaper }) {
+  // Lazy: só carrega os thumbnails na primeira vez que o painel abre
+  const hasOpenedRef = useRef(false);
+  if (open && !hasOpenedRef.current) hasOpenedRef.current = true;
+
   return (
     <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="paper" onClose={onClose} />
@@ -521,7 +531,13 @@ function PaperPanel({ open, onClose, onAddPaper }) {
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#A0A09A"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#CFC7B8"; }}
             >
-              <img src={p.url} alt={p.key} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              <img
+                src={hasOpenedRef.current ? p.url : undefined}
+                alt={p.key}
+                loading="lazy"
+                decoding="async"
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
             </div>
           ))}
         </div>

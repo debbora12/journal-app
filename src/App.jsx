@@ -210,6 +210,20 @@ const PNG_STICKERS = [
   { id: 'png-9',  url: '/stickers/png-9.webp' },
 ];
 
+const DATE_STICKERS = [
+  { id: 'date-jan',       url: '/stickers/dates/jan.webp' },
+  { id: 'date-march',     url: '/stickers/dates/march.webp' },
+  { id: 'date-april',     url: '/stickers/dates/april.webp' },
+  { id: 'date-may',       url: '/stickers/dates/may.webp' },
+  { id: 'date-june',      url: '/stickers/dates/june.webp' },
+  { id: 'date-july',      url: '/stickers/dates/july.webp' },
+  { id: 'date-august',    url: '/stickers/dates/august.webp' },
+  { id: 'date-september', url: '/stickers/dates/september.webp' },
+  { id: 'date-october',   url: '/stickers/dates/october.webp' },
+  { id: 'date-november',  url: '/stickers/dates/november.webp' },
+  { id: 'date-december',  url: '/stickers/dates/december.webp' },
+];
+
 const PAPERS = [
   { key: "paper08", url: "/papers/paper08.webp" },
   { key: "paper09", url: "/papers/paper09.webp" },
@@ -456,6 +470,10 @@ function StickerPanel({ onAddSticker, onClose, open }) {
     <div onClick={e => e.stopPropagation()} style={panelBase(open)}>
       <PanelHeader label="stickers" onClose={onClose} />
       <div style={{ overflowY: "auto", flex: 1, padding: 12 }}>
+        {/* ── Stickers ── */}
+        <div style={{ fontFamily: UI_FONT, fontSize: 10, fontWeight: 600, color: "#666", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8, userSelect: "none" }}>
+          Stickers
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {/* PNG stickers */}
           {PNG_STICKERS.map(p => (
@@ -499,6 +517,33 @@ function StickerPanel({ onAddSticker, onClose, open }) {
               </div>
             );
           })}
+        </div>
+
+        {/* ── Dates ── */}
+        <div style={{ fontFamily: UI_FONT, fontSize: 10, fontWeight: 600, color: "#666", textTransform: "uppercase", letterSpacing: "0.12em", margin: "16px 0 8px", userSelect: "none" }}>
+          Dates
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+          {DATE_STICKERS.map(p => (
+            <div
+              key={p.id}
+              onClick={() => onAddSticker('png-sticker', p.url)}
+              style={{
+                height: 72, background: "#1C1C1C", borderRadius: 6, padding: 8,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                outline: "1px solid transparent", transition: "background 0.12s, outline 0.12s",
+                boxSizing: "border-box",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#252525"; e.currentTarget.style.outline = "1px solid #333333"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#1C1C1C"; e.currentTarget.style.outline = "1px solid transparent"; }}
+            >
+              <img
+                src={hasOpenedRef.current ? p.url : undefined}
+                alt="" draggable={false} loading="lazy" decoding="async"
+                style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>

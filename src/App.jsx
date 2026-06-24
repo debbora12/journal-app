@@ -932,19 +932,19 @@ const TextBlock = memo(function TextBlock({
         onSelect();
       }}
     >
-      {/* Alça de drag ACIMA da caixa selecionada — fora da borda pontilhada */}
-      {showControls && (
-        <div
-          onMouseDown={e => { e.stopPropagation(); onMouseDownDrag(e); }}
-          style={{
-            height: 14, cursor: "move",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, color: "#999999", userSelect: "none",
-          }}
-        >
-          ⠿
-        </div>
-      )}
+      {/* Alça de drag — sempre renderizada (14px reservados) para não deslocar textarea ao selecionar */}
+      <div
+        onMouseDown={showControls ? e => { e.stopPropagation(); onMouseDownDrag(e); } : undefined}
+        style={{
+          height: 14, cursor: showControls ? "move" : "default",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 10, color: "#999999", userSelect: "none",
+          opacity: showControls ? 1 : 0,
+          pointerEvents: showControls ? "auto" : "none",
+        }}
+      >
+        ⠿
+      </div>
 
       {/* Caixa com borda — só esta tem o outline */}
       <div style={{
@@ -1052,12 +1052,17 @@ const JournalPage = memo(function JournalPage({
 
   const handleTextDragStart = (blk, e) => {
     if (e.button !== 0) return; e.stopPropagation();
-    const rect = pageRef.current.getBoundingClientRect();
+    const pageRect = pageRef.current.getBoundingClientRect();
+    // Usa o rect real do elemento para offset preciso (não blk.x/blk.y que pode ser stale)
+    const el = document.querySelector(`[data-id="${blk.id}"]`);
+    const elRect = el ? el.getBoundingClientRect() : null;
+    const mouseOffsetX = elRect ? e.clientX - elRect.left : e.clientX - pageRect.left - blk.x;
+    const mouseOffsetY = elRect ? e.clientY - elRect.top  : e.clientY - pageRect.top  - blk.y;
     dragRef.current = { type: "text", id: blk.id, dkey: dateKey,
-      pageLeft: rect.left, pageTop: rect.top,
-      siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(rect), siblingPageTop: rect.top,
-      mouseOffsetX: e.clientX - rect.left - blk.x, mouseOffsetY: e.clientY - rect.top - blk.y,
-      startClientX: e.clientX, startClientY: e.clientY, // threshold: só move se arrastou >4px
+      pageLeft: pageRect.left, pageTop: pageRect.top,
+      siblingKey: siblingDateKey, siblingPageLeft: getSiblingLeft(pageRect), siblingPageTop: pageRect.top,
+      mouseOffsetX, mouseOffsetY,
+      startClientX: e.clientX, startClientY: e.clientY,
       dims: { w: blk.width, h: 20 } };
     onSelectId(blk.id);
   };

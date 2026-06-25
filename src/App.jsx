@@ -76,7 +76,7 @@ function addDays(base, days) {
   return d;
 }
 function toKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+  return `journal_${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
 function polH(w) { return (w - 16) + 36; }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -84,7 +84,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 // Fallback: lê localStorage (usado offline / sem auth)
 function loadPageLocal(key) {
   try {
-    const raw = localStorage.getItem(`journal_${key}`);
+    const raw = localStorage.getItem(key);
     if (raw) {
       const d = JSON.parse(raw);
       return { polaroids: d.polaroids||[], textBlocks: d.textBlocks||[], stickers: d.stickers||[], papers: d.papers||[] };
@@ -101,20 +101,35 @@ async function loadPageRemote(key, userId) {
       .from("journal_entries")
       .select("data")
       .eq("user_id", userId)
-      .eq("date_key", key)
+      .eq("date_key", key.replace("journal_", ""))
       .maybeSingle();
     if (entry?.data) return entry.data;
   } catch {}
   return loadPageLocal(key);
 }
 
+// Migra chaves antigas com double-prefix (journal_journal_YYYY-MM-DD → journal_YYYY-MM-DD)
+function migrateOldKeys() {
+  const toMigrate = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k?.startsWith("journal_journal_")) toMigrate.push(k);
+  }
+  toMigrate.forEach(oldKey => {
+    const newKey = oldKey.replace("journal_journal_", "journal_");
+    if (!localStorage.getItem(newKey)) localStorage.setItem(newKey, localStorage.getItem(oldKey));
+    localStorage.removeItem(oldKey);
+  });
+}
+migrateOldKeys();
+
 // Salva uma página no Supabase (e em localStorage como cache)
 async function savePageRemote(key, data, userId) {
-  localStorage.setItem(`journal_${key}`, JSON.stringify(data));
+  localStorage.setItem(key, JSON.stringify(data));
   if (!userId) return;
   try {
     await supabase.from("journal_entries").upsert(
-      { user_id: userId, date_key: key, data, updated_at: new Date().toISOString() },
+      { user_id: userId, date_key: key.replace("journal_", ""), data, updated_at: new Date().toISOString() },
       { onConflict: "user_id,date_key" }
     );
   } catch (e) { console.error("Supabase save error:", e); }
@@ -1459,17 +1474,16 @@ export default function App() {
   const leftKey   = toKey(leftDate);
 
   useEffect(() => {
-    const keysToLoad = [leftKey, rightKey].filter(k => !(k in pageData));
-    if (!keysToLoad.length) return;
-    Promise.all(keysToLoad.map(k => loadPageRemote(k, user?.id).then(data => ({ k, data }))))
-      .then(results => {
-        setPageData(prev => {
-          const next = { ...prev };
-          results.forEach(({ k, data }) => { next[k] = data; });
-          return next;
-        });
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    Promise.all([
+      loadPageRemote(leftKey, user?.id),
+      loadPageRemote(rightKey, user?.id),
+    ]).then(([leftData, rightData]) => {
+      setPageData(prev => ({
+        ...prev,
+        [leftKey]: leftData,
+        [rightKey]: rightData,
+      }));
+    });
   }, [leftKey, rightKey, user?.id]);
 
   useEffect(() => {
@@ -1857,9 +1871,15 @@ export default function App() {
   const deletePaper = (key, id) => { mutatePage(key, p => ({...p, papers: (p.papers||[]).filter(x=>x.id!==id)})); setSelectedId(null); };
 
   // ── Navigation ────────────────────────────────────────────────────────────
+  const flushToStorage = () => {
+    Object.entries(pageData).forEach(([key, data]) => {
+      localStorage.setItem(key, JSON.stringify(data));
+    });
+  };
   const navigate = (dir) => {
     if (phase !== "idle") return;
     if (dir === "right" && offset >= 0) return;
+    flushToStorage();
     setSelectedId(null); setPendingDir(dir); setPhase("out");
     setTimeout(() => {
       setOffset(o => dir === "left" ? o-1 : o+1);
@@ -1867,7 +1887,9 @@ export default function App() {
     }, 180);
   };
   const navigateToOffset = (newOffset) => {
-    if (newOffset === offset) return; setSelectedId(null); setOffset(newOffset);
+    if (newOffset === offset) return;
+    flushToStorage();
+    setSelectedId(null); setOffset(newOffset);
   };
 
   const translateX =
